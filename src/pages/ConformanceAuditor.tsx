@@ -34,9 +34,9 @@ export default function ConformanceAuditor() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Conformance Auditor</h1>
-          <p className="text-muted-foreground text-sm mt-1">
+        <div className="text-center flex-1">
+          <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Conformance Auditor</h1>
+          <p className="text-muted-foreground text-sm mt-2">
             Submit a document to check against all active rulebooks
           </p>
         </div>

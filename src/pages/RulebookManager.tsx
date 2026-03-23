@@ -46,9 +46,9 @@ export default function RulebookManager() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Rulebook Manager</h1>
-        <p className="text-muted-foreground text-sm mt-1">
+      <div className="text-center">
+        <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Rulebook Manager</h1>
+        <p className="text-muted-foreground text-sm mt-2">
           {docs ? `${docs.length} active document${docs.length !== 1 ? "s" : ""}` : "Loading…"}
         </p>
       </div>
