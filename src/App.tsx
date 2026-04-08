@@ -106,10 +106,10 @@ function Dashboard() {
       <div className="flex-1 w-full max-w-4xl mx-auto px-6 py-10">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-extrabold text-foreground tracking-tight">
-            AI Conformance Checker
+            Knowledge Engine
           </h1>
           <p className="text-muted-foreground text-sm mt-2">
-            Enterprise-grade document conformance analysis
+            Intelligent document analysis powered by your knowledge banks
           </p>
         </div>
 
@@ -117,11 +117,11 @@ function Dashboard() {
           <TabsList className="grid w-full grid-cols-2 glass">
             <TabsTrigger value="knowledge" className="gap-2">
               <BookOpen className="h-4 w-4" />
-              Knowledge Base
+              Knowledge Bank
             </TabsTrigger>
             <TabsTrigger value="auditor" className="gap-2">
               <Shield className="h-4 w-4" />
-              Conformance Auditor
+              Document Auditor
             </TabsTrigger>
           </TabsList>
 
