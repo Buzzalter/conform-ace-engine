@@ -4,6 +4,8 @@ export interface RulebookDocument {
   id: string;
   name: string;
   uploaded_at: string;
+  status: "processing" | "completed" | "failed";
+  progress: number;
 }
 
 export interface Violation {

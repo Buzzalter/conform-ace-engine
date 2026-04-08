@@ -3,8 +3,10 @@ import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Progress } from "@/components/ui/progress";
 import { AnimatePresence } from "framer-motion";
-import { BookOpen, Shield, Loader2, RotateCcw } from "lucide-react";
+import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileDropzone } from "@/components/FileDropzone";
@@ -36,11 +38,21 @@ function Dashboard() {
   const [domainName, setDomainName] = useState("");
   const [auditState, setAuditState] = useState<AuditState>("idle");
   const [violations, setViolations] = useState<Violation[]>([]);
+  const [jobsOpen, setJobsOpen] = useState(true);
 
   const { data: docs, isLoading } = useQuery({
     queryKey: ["rulebooks"],
     queryFn: fetchDocuments,
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (data && data.some((d) => d.status === "processing")) return 3000;
+      return false;
+    },
   });
+
+  const processingDocs = docs?.filter((d) => d.status === "processing") ?? [];
+  const completedDocs = docs?.filter((d) => d.status === "completed") ?? [];
+  const failedDocs = docs?.filter((d) => d.status === "failed") ?? [];
 
   const deleteMutation = useMutation({
     mutationFn: deleteRulebook,
@@ -132,9 +144,51 @@ function Dashboard() {
 
           {/* Tab 1: Knowledge Base */}
           <TabsContent value="knowledge" className="mt-6 space-y-6">
+            {/* Active Ingestion Jobs */}
+            {processingDocs.length > 0 && (
+              <Collapsible open={jobsOpen} onOpenChange={setJobsOpen}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Active Ingestion Jobs ({processingDocs.length})
+                  </div>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${jobsOpen ? "rotate-180" : ""}`} />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2">
+                  {processingDocs.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center gap-4 rounded-lg border border-border/40 bg-secondary/50 px-4 py-3"
+                    >
+                      <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
+                        <Progress value={doc.progress} className="h-2" />
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">{doc.progress}%</span>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {/* Failed docs warning */}
+            {failedDocs.length > 0 && (
+              <div className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+                <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-destructive">{failedDocs.length} document{failedDocs.length !== 1 ? "s" : ""} failed to process</p>
+                  <p className="text-muted-foreground text-xs mt-0.5">
+                    {failedDocs.map((d) => d.name).join(", ")}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="text-center">
               <p className="text-muted-foreground text-sm">
-                {docs ? `${docs.length} active document${docs.length !== 1 ? "s" : ""}` : "Loading…"}
+                {docs ? `${completedDocs.length} active document${completedDocs.length !== 1 ? "s" : ""}` : "Loading…"}
+                {processingDocs.length > 0 && ` · ${processingDocs.length} processing`}
               </p>
             </div>
 
@@ -170,17 +224,19 @@ function Dashboard() {
                 Array.from({ length: 3 }).map((_, i) => (
                   <Skeleton key={i} className="h-16 rounded-xl" />
                 ))
-              ) : docs && docs.length > 0 ? (
+              ) : completedDocs.length > 0 ? (
                 <AnimatePresence>
-                  {docs.map((doc) => (
+                  {completedDocs.map((doc) => (
                     <RulebookCard key={doc.id} doc={doc} onDelete={(id) => deleteMutation.mutate(id)} />
                   ))}
                 </AnimatePresence>
               ) : (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <BookOpen className="h-10 w-10 text-muted-foreground/40 mb-3" />
-                  <p className="text-sm text-muted-foreground">No rulebooks uploaded yet</p>
-                </div>
+                !processingDocs.length && (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <BookOpen className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                    <p className="text-sm text-muted-foreground">No rulebooks uploaded yet</p>
+                  </div>
+                )
               )}
             </div>
           </TabsContent>
@@ -189,7 +245,7 @@ function Dashboard() {
           <TabsContent value="auditor" className="mt-6 space-y-6">
             <div className="flex items-center justify-between">
               <FrameworkSelector
-                documents={docs ?? []}
+                documents={completedDocs}
                 activeGraphIds={activeGraphIds}
                 onToggle={toggleFramework}
               />
