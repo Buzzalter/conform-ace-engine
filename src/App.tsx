@@ -64,7 +64,7 @@ function Dashboard() {
     onSuccess: (_d, deletedId) => {
       qc.invalidateQueries({ queryKey: ["rulebooks"] });
       qc.invalidateQueries({ queryKey: ["banks"] });
-      setActiveGraphIds((prev) => prev.filter((id) => id !== deletedId));
+      // No need to filter activeGraphIds by doc ID since we store bank names
       toast({ title: "Rulebook removed", description: "Document deleted from knowledge base." });
     },
     onError: () => {
