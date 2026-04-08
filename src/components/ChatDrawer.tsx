@@ -25,6 +25,7 @@ interface ChatSession {
 
 interface ChatDrawerProps {
   activeGraphIds: string[];
+  disabled?: boolean;
 }
 
 const STORAGE_KEY = "chat_sessions";
@@ -42,7 +43,7 @@ function persistSessions(sessions: ChatSession[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
 }
 
-export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
+export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -303,7 +304,7 @@ export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
                       className="bg-secondary border-border/50"
                       disabled={loading}
                     />
-                    <Button type="submit" size="icon" disabled={loading || !input.trim()}>
+                    <Button type="submit" size="icon" disabled={loading || !input.trim() || disabled}>
                       <Send className="h-4 w-4" />
                     </Button>
                   </form>
