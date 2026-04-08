@@ -415,7 +415,7 @@ function Dashboard() {
 
             {/* Integrity Scan Dialog */}
             <Dialog open={!!integrityBank} onOpenChange={(open) => { if (!open) setIntegrityBank(null); }}>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-card border-border">
+              <DialogContent className="max-w-2xl bg-card border-border">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <Stethoscope className="h-5 w-5 text-primary" />
@@ -428,8 +428,10 @@ function Dashboard() {
                     <p className="text-sm text-muted-foreground">Analyzing corpus for contradictions and hierarchical conflicts…</p>
                   </div>
                 ) : integrityReport ? (
-                  <div className="prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{integrityReport}</ReactMarkdown>
+                  <div className="overflow-y-auto max-h-[70vh] text-foreground">
+                    <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{integrityReport}</ReactMarkdown>
+                    </div>
                   </div>
                 ) : null}
               </DialogContent>
