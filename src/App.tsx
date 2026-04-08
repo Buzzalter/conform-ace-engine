@@ -327,6 +327,13 @@ function Dashboard() {
                             </span>
                           </div>
                         </AccordionTrigger>
+                        <button
+                          className="p-2 rounded-md hover:bg-primary/10 transition-colors"
+                          title={`Scan "${bankName}" for conflicts`}
+                          onClick={(e) => { e.stopPropagation(); handleIntegrityScan(bankName); }}
+                        >
+                          <Stethoscope className="h-4 w-4 text-primary/70" />
+                        </button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <button
