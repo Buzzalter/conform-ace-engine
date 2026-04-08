@@ -256,7 +256,15 @@ export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
                             : "bg-secondary text-foreground"
                         }`}
                       >
-                        {msg.content}
+                        {msg.role === "assistant" ? (
+                          <div className="prose prose-invert prose-sm max-w-none prose-headings:text-foreground prose-headings:font-semibold prose-h3:text-base prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:text-foreground prose-strong:font-bold">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {msg.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          msg.content
+                        )}
                       </div>
                       {msg.role === "user" && (
                         <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
