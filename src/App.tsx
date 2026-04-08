@@ -144,12 +144,25 @@ function Dashboard() {
                 <span className="text-sm text-primary font-medium">Ingesting into Knowledge Graph…</span>
               </div>
             ) : (
-              <FileDropzone
-                onFileDrop={handleUpload}
-                label="Upload a conformance rulebook"
-                sublabel="PDF, DOCX, or TXT — drag & drop or click to browse"
-                compact
-              />
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="domain-name" className="text-sm font-medium text-foreground">
+                    Knowledge Graph Name <span className="text-muted-foreground">(e.g., &apos;Navy Regulations&apos;)</span>
+                  </Label>
+                  <Input
+                    id="domain-name"
+                    placeholder="Enter a name or leave blank to use filename"
+                    value={domainName}
+                    onChange={(e) => setDomainName(e.target.value)}
+                  />
+                </div>
+                <FileDropzone
+                  onFileDrop={handleUpload}
+                  label="Upload a conformance rulebook"
+                  sublabel="PDF, DOCX, or TXT — drag & drop or click to browse"
+                  compact
+                />
+              </div>
             )}
 
             <div className="space-y-3">
