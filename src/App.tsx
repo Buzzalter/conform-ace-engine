@@ -248,6 +248,12 @@ function Dashboard() {
                         {doc.message && (
                           <p className="text-[11px] text-muted-foreground font-mono truncate">{doc.message}</p>
                         )}
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">{doc.progress}%</span>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
             )}
 
             <div className="text-center">
