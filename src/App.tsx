@@ -412,6 +412,28 @@ function Dashboard() {
                 )
               )}
             </div>
+
+            {/* Integrity Scan Dialog */}
+            <Dialog open={!!integrityBank} onOpenChange={(open) => { if (!open) setIntegrityBank(null); }}>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-card border-border">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Stethoscope className="h-5 w-5 text-primary" />
+                    Corpus Integrity Report — {integrityBank}
+                  </DialogTitle>
+                </DialogHeader>
+                {integrityLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                    <p className="text-sm text-muted-foreground">Analyzing corpus for contradictions and hierarchical conflicts…</p>
+                  </div>
+                ) : integrityReport ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{integrityReport}</ReactMarkdown>
+                  </div>
+                ) : null}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Tab 2: Conformance Auditor */}
