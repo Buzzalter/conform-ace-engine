@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Filter, BookOpen, FolderOpen } from "lucide-react";
+import { Library, BookOpen, FolderOpen } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { RulebookDocument } from "@/lib/api";
 
@@ -31,8 +31,8 @@ export function FrameworkSelector({ documents, activeGraphIds, onToggle }: Frame
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2 border-border/50">
-          <Filter className="h-4 w-4" />
-          Select Frameworks
+          <Library className="h-4 w-4" />
+          Select Knowledge Banks
           {activeGraphIds.length > 0 && (
             <span className="ml-1 rounded-full bg-primary/20 text-primary text-xs px-2 py-0.5 font-medium">
               {activeGraphIds.length}
@@ -57,7 +57,6 @@ export function FrameworkSelector({ documents, activeGraphIds, onToggle }: Frame
 
                 return (
                   <div key={bank} className="space-y-2">
-                    {/* Bank-level toggle */}
                     <label className="flex items-center gap-3 cursor-pointer group">
                       <Checkbox
                         checked={isSelected}
@@ -72,7 +71,6 @@ export function FrameworkSelector({ documents, activeGraphIds, onToggle }: Frame
                       </div>
                     </label>
 
-                    {/* Individual docs (read-only, for reference) */}
                     <div className="ml-7 space-y-1.5">
                       {bankDocs.map((doc) => (
                         <div
