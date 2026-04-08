@@ -1,12 +1,13 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { AnimatePresence } from "framer-motion";
-import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle } from "lucide-react";
+import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, FileText, XCircle } from "lucide-react";
 import { FileDropzone } from "@/components/FileDropzone";
 import { RulebookCard } from "@/components/RulebookCard";
 import { AnalysisLoader } from "@/components/AnalysisLoader";
@@ -58,6 +59,17 @@ function Dashboard() {
   const processingDocs = docs?.filter((d) => d.status === "processing") ?? [];
   const completedDocs = docs?.filter((d) => d.status === "completed") ?? [];
   const failedDocs = docs?.filter((d) => d.status === "failed") ?? [];
+  const settledDocs = docs?.filter((d) => d.status === "completed" || d.status === "failed") ?? [];
+
+  const groupedByBank = useMemo(() => {
+    const map = new Map<string, typeof settledDocs>();
+    settledDocs.forEach((doc) => {
+      const bank = doc.bank || "Uncategorized";
+      if (!map.has(bank)) map.set(bank, []);
+      map.get(bank)!.push(doc);
+    });
+    return map;
+  }, [settledDocs]);
 
   const deleteMutation = useMutation({
     mutationFn: deleteRulebook,
@@ -186,23 +198,11 @@ function Dashboard() {
               </Collapsible>
             )}
 
-            {/* Failed docs warning */}
-            {failedDocs.length > 0 && (
-              <div className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
-                <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
-                <div className="text-sm">
-                  <p className="font-medium text-destructive">{failedDocs.length} document{failedDocs.length !== 1 ? "s" : ""} failed to process</p>
-                  <p className="text-muted-foreground text-xs mt-0.5">
-                    {failedDocs.map((d) => d.name).join(", ")}
-                  </p>
-                </div>
-              </div>
-            )}
-
             <div className="text-center">
               <p className="text-muted-foreground text-sm">
                 {docs ? `${completedDocs.length} active document${completedDocs.length !== 1 ? "s" : ""}` : "Loading…"}
                 {processingDocs.length > 0 && ` · ${processingDocs.length} processing`}
+                {failedDocs.length > 0 && ` · ${failedDocs.length} failed`}
               </p>
             </div>
 
@@ -223,17 +223,65 @@ function Dashboard() {
               </div>
             )}
 
-            <div className="space-y-3">
+            {/* Grouped Accordion List */}
+            <div className="space-y-2">
               {isLoading ? (
                 Array.from({ length: 3 }).map((_, i) => (
                   <Skeleton key={i} className="h-16 rounded-xl" />
                 ))
-              ) : completedDocs.length > 0 ? (
-                <AnimatePresence>
-                  {completedDocs.map((doc) => (
-                    <RulebookCard key={doc.id} doc={doc} onDelete={(id) => deleteMutation.mutate(id)} />
+              ) : groupedByBank.size > 0 ? (
+                <Accordion type="multiple" defaultValue={Array.from(groupedByBank.keys())} className="space-y-2">
+                  {Array.from(groupedByBank.entries()).map(([bankName, bankDocs]) => (
+                    <AccordionItem key={bankName} value={bankName} className="border rounded-xl overflow-hidden border-border/60">
+                      <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/50">
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4 text-primary" />
+                          <span className="font-medium text-sm">{bankName}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                            {bankDocs.length}
+                          </span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-2 pb-2">
+                        <div className="space-y-1.5">
+                          {bankDocs.map((doc) => (
+                            <div
+                              key={doc.id}
+                              className={`flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors ${
+                                doc.status === "failed"
+                                  ? "border border-destructive/30 bg-destructive/5"
+                                  : "border border-transparent hover:bg-muted/40"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                {doc.status === "failed" ? (
+                                  <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                                ) : (
+                                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                                )}
+                                <div className="min-w-0">
+                                  <p className={`text-sm truncate ${doc.status === "failed" ? "text-destructive" : "text-foreground"}`}>
+                                    {doc.name}
+                                  </p>
+                                  {doc.status === "failed" && (
+                                    <p className="text-[11px] text-destructive/70 mt-0.5">Ingestion failed</p>
+                                  )}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => deleteMutation.mutate(doc.id)}
+                                className="p-1.5 rounded-md hover:bg-destructive/10 transition-colors shrink-0"
+                                title="Delete document"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-destructive/70" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
                   ))}
-                </AnimatePresence>
+                </Accordion>
               ) : (
                 !processingDocs.length && (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
