@@ -182,6 +182,8 @@ function Dashboard() {
   const resetAudit = () => {
     setAuditState("idle");
     setViolations([]);
+    setAuditJobId(null);
+    setAuditError("");
   };
 
   const toggleFramework = (id: string) => {
@@ -243,12 +245,9 @@ function Dashboard() {
                           )}
                         </div>
                         <Progress value={doc.progress} className="h-2" />
-                      </div>
-                      <span className="text-xs text-muted-foreground shrink-0">{doc.progress}%</span>
-                    </div>
-                  ))}
-                </CollapsibleContent>
-              </Collapsible>
+                        {doc.message && (
+                          <p className="text-[11px] text-muted-foreground font-mono truncate">{doc.message}</p>
+                        )}
             )}
 
             <div className="text-center">
