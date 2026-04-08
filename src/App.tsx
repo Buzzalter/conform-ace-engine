@@ -414,24 +414,39 @@ function Dashboard() {
             </div>
 
             {/* Integrity Scan Dialog */}
-            <Dialog open={!!integrityBank} onOpenChange={(open) => { if (!open) setIntegrityBank(null); }}>
-              <DialogContent className="max-w-2xl bg-card border-border">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
+             <Dialog open={!!integrityBank} onOpenChange={(open) => { if (!open) setIntegrityBank(null); }}>
+              <DialogContent className="max-w-3xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-0">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-200 dark:border-slate-700">
+                  <DialogTitle className="flex items-center gap-2 text-slate-900 dark:text-white">
                     <Stethoscope className="h-5 w-5 text-primary" />
                     Corpus Integrity Report — {integrityBank}
                   </DialogTitle>
                 </DialogHeader>
                 {integrityLoading ? (
-                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                  <div className="flex flex-col items-center justify-center py-16 gap-3">
                     <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                    <p className="text-sm text-muted-foreground">Analyzing corpus for contradictions and hierarchical conflicts…</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Analyzing corpus for contradictions and hierarchical conflicts…</p>
                   </div>
                 ) : integrityReport ? (
-                  <div className="overflow-y-auto max-h-[70vh] text-foreground">
-                    <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{integrityReport}</ReactMarkdown>
-                    </div>
+                  <div className="overflow-y-auto max-h-[70vh] px-6 py-4">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ children }) => <h1 className="text-2xl font-bold text-blue-700 dark:text-blue-400 mt-4 mb-3 pb-2 border-b border-slate-200 dark:border-slate-700">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-xl font-bold text-blue-700 dark:text-blue-400 mt-6 mb-3 pb-2 border-b border-slate-200 dark:border-slate-700">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-lg font-semibold text-blue-600 dark:text-blue-300 mt-5 mb-2">{children}</h3>,
+                        p: ({ children }) => <p className="text-slate-800 dark:text-slate-200 leading-relaxed mb-4 text-base">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc pl-5 mb-4 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal pl-5 mb-4 space-y-1">{children}</ol>,
+                        li: ({ children }) => <li className="text-slate-800 dark:text-slate-200 ml-4 mb-2 text-base">{children}</li>,
+                        strong: ({ children }) => <strong className="font-bold text-slate-900 dark:text-white bg-blue-50 dark:bg-blue-900/30 px-1 rounded">{children}</strong>,
+                        blockquote: ({ children }) => <blockquote className="border-l-4 border-blue-400 dark:border-blue-600 pl-4 my-4 italic text-slate-600 dark:text-slate-300">{children}</blockquote>,
+                        code: ({ children }) => <code className="bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>,
+                        hr: () => <hr className="my-6 border-slate-200 dark:border-slate-700" />,
+                      }}
+                    >
+                      {integrityReport}
+                    </ReactMarkdown>
                   </div>
                 ) : null}
               </DialogContent>
