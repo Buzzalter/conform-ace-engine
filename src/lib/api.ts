@@ -67,6 +67,13 @@ export async function fetchAuditJob(jobId: string): Promise<{ status: string; pr
   return res.json();
 }
 
+export async function runIntegrityScan(bankName: string): Promise<string> {
+  const res = await fetch(`${BASE}/api/conformance/banks/${encodeURIComponent(bankName)}/integrity`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to run integrity scan");
+  const data = await res.json();
+  return data.report;
+}
+
 export async function askChatbot(query: string, active_domains: string[], history: {role: string, content: string}[]): Promise<string> {
   const form = new FormData();
   form.append("query", query);
