@@ -9,6 +9,17 @@ import { Progress } from "@/components/ui/progress";
 import { AnimatePresence } from "framer-motion";
 import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, FileText, XCircle } from "lucide-react";
 import { FileDropzone } from "@/components/FileDropzone";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { RulebookCard } from "@/components/RulebookCard";
 import { AnalysisLoader } from "@/components/AnalysisLoader";
 import { ConformanceSuccess } from "@/components/ConformanceSuccess";
@@ -23,6 +34,7 @@ import {
   fetchBanks,
   uploadRulebook,
   deleteRulebook,
+  deleteKnowledgeBank,
   checkSubmission,
   type Violation,
 } from "@/lib/api";
@@ -73,14 +85,27 @@ function Dashboard() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteRulebook,
-    onSuccess: (_d, deletedId) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["rulebooks"] });
       qc.invalidateQueries({ queryKey: ["banks"] });
-      // No need to filter activeGraphIds by doc ID since we store bank names
       toast({ title: "Rulebook removed", description: "Document deleted from knowledge base." });
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to delete rulebook.", variant: "destructive" });
+    },
+  });
+
+  const deleteBankMutation = useMutation({
+    mutationFn: deleteKnowledgeBank,
+    onSuccess: (_d, deletedBank) => {
+      qc.invalidateQueries({ queryKey: ["rulebooks"] });
+      qc.invalidateQueries({ queryKey: ["banks"] });
+      setActiveGraphIds((prev) => prev.filter((b) => b !== deletedBank));
+      if (selectedBank === deletedBank) setSelectedBank("");
+      toast({ title: "Knowledge Bank deleted", description: `"${deletedBank}" and all its documents have been removed.` });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete Knowledge Bank.", variant: "destructive" });
     },
   });
 
@@ -213,7 +238,7 @@ function Dashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                <BankCombobox banks={banks} value={selectedBank} onChange={setSelectedBank} />
+                <BankCombobox banks={banks} value={selectedBank} onChange={setSelectedBank} onDeleteBank={(bank) => deleteBankMutation.mutate(bank)} />
                 <FileDropzone
                   onFileDrop={handleUpload}
                   label="Upload a conformance rulebook"
@@ -233,15 +258,45 @@ function Dashboard() {
                 <Accordion type="multiple" defaultValue={Array.from(groupedByBank.keys())} className="space-y-2">
                   {Array.from(groupedByBank.entries()).map(([bankName, bankDocs]) => (
                     <AccordionItem key={bankName} value={bankName} className="border rounded-xl overflow-hidden border-border/60">
-                      <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted/50">
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4 text-primary" />
-                          <span className="font-medium text-sm">{bankName}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
-                            {bankDocs.length}
-                          </span>
-                        </div>
-                      </AccordionTrigger>
+                      <div className="flex items-center">
+                        <AccordionTrigger className="flex-1 px-4 py-3 hover:no-underline hover:bg-muted/50">
+                          <div className="flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-primary" />
+                            <span className="font-medium text-sm">{bankName}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+                              {bankDocs.length}
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              className="p-2 mr-2 rounded-md hover:bg-destructive/10 transition-colors"
+                              title={`Delete "${bankName}" bank`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive/70" />
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="bg-card border-border">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Knowledge Bank</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will permanently delete the bank "{bankName}" and all {bankDocs.length} document{bankDocs.length !== 1 ? "s" : ""} inside it. This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel className="border-border">Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteBankMutation.mutate(bankName)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete Bank
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                       <AccordionContent className="px-2 pb-2">
                         <div className="space-y-1.5">
                           {bankDocs.map((doc) => (
