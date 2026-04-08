@@ -44,10 +44,11 @@ export async function checkSubmission(file: File, active_domains: string[]): Pro
   return res.json();
 }
 
-export async function askChatbot(query: string, active_domains: string[]): Promise<string> {
+export async function askChatbot(query: string, active_domains: string[], history: {role: string, content: string}[]): Promise<string> {
   const form = new FormData();
   form.append("query", query);
   form.append("active_domains", JSON.stringify(active_domains));
+  form.append("history", JSON.stringify(history));
   const res = await fetch(`${BASE}/api/chat`, { method: "POST", body: form });
   if (!res.ok) throw new Error("Failed to get chatbot response");
   return res.text();

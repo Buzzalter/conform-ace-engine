@@ -37,7 +37,8 @@ export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
     setLoading(true);
 
     try {
-      const response = await askChatbot(query, activeGraphIds);
+      const history = messages.map((m) => ({ role: m.role, content: m.content }));
+      const response = await askChatbot(query, activeGraphIds, history);
       setMessages((prev) => [...prev, { role: "assistant", content: response }]);
     } catch {
       setMessages((prev) => [
