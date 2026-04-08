@@ -2,9 +2,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, Bot, User } from "lucide-react";
+import { Send, Loader2, Bot, User, RotateCcw } from "lucide-react";
 import { askChatbot } from "@/lib/api";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 
 interface Message {
   role: "user" | "assistant";
@@ -21,12 +21,28 @@ export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isFirstRender = useRef(true);
+
+  // Clear history when active knowledge graphs change
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setMessages([]);
+    toast("Chat history cleared due to knowledge graph changes.");
+  }, [activeGraphIds]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const handleNewConversation = useCallback(() => {
+    setMessages([]);
+    setInput("");
+  }, []);
 
   const handleSend = useCallback(async () => {
     const query = input.trim();
@@ -48,7 +64,7 @@ export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, activeGraphIds]);
+  }, [input, loading, activeGraphIds, messages]);
 
   return (
     <>
@@ -63,10 +79,21 @@ export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="bottom" className="h-[60vh] glass border-t border-border/50 p-0 flex flex-col">
           <SheetHeader className="px-6 pt-4 pb-2 border-b border-border/40">
-            <SheetTitle className="flex items-center gap-2 text-foreground">
-              <Bot className="h-5 w-5 text-primary" />
-              Document Querying
-            </SheetTitle>
+            <div className="flex items-center justify-between w-full">
+              <SheetTitle className="flex items-center gap-2 text-foreground">
+                <Bot className="h-5 w-5 text-primary" />
+                Document Querying
+              </SheetTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNewConversation}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                title="Start new conversation"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            </div>
           </SheetHeader>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
@@ -125,7 +152,7 @@ export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about conformance rules…"
+                placeholder="Ask about your knowledge banks…"
                 className="bg-secondary border-border/50"
                 disabled={loading}
               />
