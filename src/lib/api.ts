@@ -7,6 +7,7 @@ export interface RulebookDocument {
   bank: string;
   status: "processing" | "completed" | "failed";
   progress: number;
+  message?: string;
 }
 
 export interface Violation {
