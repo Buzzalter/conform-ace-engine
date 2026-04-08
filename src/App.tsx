@@ -383,17 +383,37 @@ function Dashboard() {
 
           {/* Tab 2: Conformance Auditor */}
           <TabsContent value="auditor" className="mt-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <FrameworkSelector
-                documents={completedDocs}
-                activeGraphIds={activeGraphIds}
-                onToggle={toggleFramework}
-              />
-              {(auditState === "results" || auditState === "failed") && (
-                <Button variant="outline" size="sm" onClick={resetAudit} className="gap-2 border-border/50">
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Check Another
-                </Button>
+            {/* Header: Select button + tags */}
+            <div className="space-y-3">
+              <div className="flex items-center flex-wrap gap-2">
+                <FrameworkSelector
+                  documents={completedDocs}
+                  activeGraphIds={activeGraphIds}
+                  onToggle={toggleFramework}
+                />
+                {activeGraphIds.map((bank) => (
+                  <span
+                    key={bank}
+                    className="inline-flex items-center rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
+                  >
+                    {bank}
+                  </span>
+                ))}
+                {(auditState === "results" || auditState === "failed") && (
+                  <Button variant="outline" size="sm" onClick={resetAudit} className="gap-2 border-border/50 ml-auto">
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Check Another
+                  </Button>
+                )}
+              </div>
+
+              {activeGraphIds.length === 0 && (
+                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3">
+                  <AlertCircle className="h-4 w-4 text-destructive shrink-0" />
+                  <p className="text-sm text-destructive font-medium">
+                    No Knowledge Banks Selected — Please select a bank to begin auditing or chatting.
+                  </p>
+                </div>
               )}
             </div>
 
@@ -456,11 +476,12 @@ function Dashboard() {
                 )}
               </>
             )}
+
+            {/* Chatbot integrated into auditor */}
+            <ChatDrawer activeGraphIds={activeGraphIds} disabled={activeGraphIds.length === 0} />
           </TabsContent>
         </Tabs>
       </div>
-
-      <ChatDrawer activeGraphIds={activeGraphIds} />
     </div>
   );
 }
