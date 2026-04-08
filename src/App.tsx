@@ -37,8 +37,17 @@ import {
   deleteKnowledgeBank,
   checkSubmission,
   fetchAuditJob,
+  runIntegrityScan,
   type Violation,
 } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { toast } from "@/hooks/use-toast";
 
 const queryClient = new QueryClient();
