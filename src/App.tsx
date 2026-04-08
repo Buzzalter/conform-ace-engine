@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { AnimatePresence } from "framer-motion";
-import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, FileText, XCircle } from "lucide-react";
+import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, FileText, XCircle, Stethoscope } from "lucide-react";
 import { FileDropzone } from "@/components/FileDropzone";
 import {
   AlertDialog,
@@ -37,8 +37,17 @@ import {
   deleteKnowledgeBank,
   checkSubmission,
   fetchAuditJob,
+  runIntegrityScan,
   type Violation,
 } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { toast } from "@/hooks/use-toast";
 
 const queryClient = new QueryClient();
@@ -55,6 +64,23 @@ function Dashboard() {
   const [jobsOpen, setJobsOpen] = useState(true);
   const [auditJobId, setAuditJobId] = useState<string | null>(null);
   const [auditError, setAuditError] = useState("");
+  const [integrityBank, setIntegrityBank] = useState<string | null>(null);
+  const [integrityReport, setIntegrityReport] = useState<string | null>(null);
+  const [integrityLoading, setIntegrityLoading] = useState(false);
+
+  const handleIntegrityScan = async (bankName: string) => {
+    setIntegrityBank(bankName);
+    setIntegrityReport(null);
+    setIntegrityLoading(true);
+    try {
+      const report = await runIntegrityScan(bankName);
+      setIntegrityReport(report);
+    } catch {
+      setIntegrityReport("**Error:** Failed to run integrity scan. Please try again.");
+    } finally {
+      setIntegrityLoading(false);
+    }
+  };
 
   const { data: docs, isLoading } = useQuery({
     queryKey: ["rulebooks"],
@@ -301,6 +327,13 @@ function Dashboard() {
                             </span>
                           </div>
                         </AccordionTrigger>
+                        <button
+                          className="p-2 rounded-md hover:bg-primary/10 transition-colors"
+                          title={`Scan "${bankName}" for conflicts`}
+                          onClick={(e) => { e.stopPropagation(); handleIntegrityScan(bankName); }}
+                        >
+                          <Stethoscope className="h-4 w-4 text-primary/70" />
+                        </button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <button
@@ -379,6 +412,28 @@ function Dashboard() {
                 )
               )}
             </div>
+
+            {/* Integrity Scan Dialog */}
+            <Dialog open={!!integrityBank} onOpenChange={(open) => { if (!open) setIntegrityBank(null); }}>
+              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-card border-border">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Stethoscope className="h-5 w-5 text-primary" />
+                    Corpus Integrity Report — {integrityBank}
+                  </DialogTitle>
+                </DialogHeader>
+                {integrityLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                    <p className="text-sm text-muted-foreground">Analyzing corpus for contradictions and hierarchical conflicts…</p>
+                  </div>
+                ) : integrityReport ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{integrityReport}</ReactMarkdown>
+                  </div>
+                ) : null}
+              </DialogContent>
+            </Dialog>
           </TabsContent>
 
           {/* Tab 2: Conformance Auditor */}
