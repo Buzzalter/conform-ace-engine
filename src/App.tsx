@@ -69,7 +69,7 @@ function Dashboard() {
         setUploading(false);
       }
     },
-    [qc]
+    [qc, domainName]
   );
 
   const handleSubmit = useCallback(
