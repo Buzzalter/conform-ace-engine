@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Loader2, Bot, User, RotateCcw, MessageSquare, ArrowLeft, AlertTriangle } from "lucide-react";
 import { askChatbot } from "@/lib/api";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -254,7 +256,15 @@ export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
                             : "bg-secondary text-foreground"
                         }`}
                       >
-                        {msg.content}
+                        {msg.role === "assistant" ? (
+                          <div className="prose prose-invert prose-sm max-w-none prose-headings:text-foreground prose-headings:font-semibold prose-h3:text-base prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:text-foreground prose-strong:font-bold">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {msg.content}
+                            </ReactMarkdown>
+                          </div>
+                        ) : (
+                          msg.content
+                        )}
                       </div>
                       {msg.role === "user" && (
                         <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center shrink-0 mt-0.5">
