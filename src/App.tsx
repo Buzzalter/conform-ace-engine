@@ -36,13 +36,14 @@ import {
   deleteRulebook,
   deleteKnowledgeBank,
   checkSubmission,
+  fetchAuditJob,
   type Violation,
 } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 
 const queryClient = new QueryClient();
 
-type AuditState = "idle" | "loading" | "results";
+type AuditState = "idle" | "loading" | "polling" | "results" | "failed";
 
 function Dashboard() {
   const qc = useQueryClient();
@@ -52,6 +53,8 @@ function Dashboard() {
   const [auditState, setAuditState] = useState<AuditState>("idle");
   const [violations, setViolations] = useState<Violation[]>([]);
   const [jobsOpen, setJobsOpen] = useState(true);
+  const [auditJobId, setAuditJobId] = useState<string | null>(null);
+  const [auditError, setAuditError] = useState("");
 
   const { data: docs, isLoading } = useQuery({
     queryKey: ["rulebooks"],
