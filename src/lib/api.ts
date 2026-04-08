@@ -7,6 +7,7 @@ export interface RulebookDocument {
   bank: string;
   status: "processing" | "completed" | "failed";
   progress: number;
+  message?: string;
 }
 
 export interface Violation {
@@ -51,12 +52,18 @@ export async function deleteKnowledgeBank(bankName: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete Knowledge Bank");
 }
 
-export async function checkSubmission(file: File, active_domains: string[]): Promise<Violation[]> {
+export async function checkSubmission(file: File, active_domains: string[]): Promise<{ job_id: string; status: string }> {
   const form = new FormData();
   form.append("file", file);
   form.append("active_domains", JSON.stringify(active_domains));
   const res = await fetch(`${BASE}/api/submission/check`, { method: "POST", body: form });
   if (!res.ok) throw new Error("Failed to check submission");
+  return res.json();
+}
+
+export async function fetchAuditJob(jobId: string): Promise<{ status: string; progress: number; message: string; violations: Violation[] }> {
+  const res = await fetch(`${BASE}/api/submission/job/${jobId}`);
+  if (!res.ok) throw new Error("Failed to fetch job");
   return res.json();
 }
 

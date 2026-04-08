@@ -36,13 +36,14 @@ import {
   deleteRulebook,
   deleteKnowledgeBank,
   checkSubmission,
+  fetchAuditJob,
   type Violation,
 } from "@/lib/api";
 import { toast } from "@/hooks/use-toast";
 
 const queryClient = new QueryClient();
 
-type AuditState = "idle" | "loading" | "results";
+type AuditState = "idle" | "loading" | "polling" | "results" | "failed";
 
 function Dashboard() {
   const qc = useQueryClient();
@@ -52,6 +53,8 @@ function Dashboard() {
   const [auditState, setAuditState] = useState<AuditState>("idle");
   const [violations, setViolations] = useState<Violation[]>([]);
   const [jobsOpen, setJobsOpen] = useState(true);
+  const [auditJobId, setAuditJobId] = useState<string | null>(null);
+  const [auditError, setAuditError] = useState("");
 
   const { data: docs, isLoading } = useQuery({
     queryKey: ["rulebooks"],
@@ -67,6 +70,30 @@ function Dashboard() {
     queryKey: ["banks"],
     queryFn: fetchBanks,
   });
+
+  const { data: auditJob } = useQuery({
+    queryKey: ["auditJob", auditJobId],
+    queryFn: () => fetchAuditJob(auditJobId!),
+    enabled: !!auditJobId && auditState === "polling",
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (data && (data.status === "completed" || data.status === "failed")) return false;
+      return 2000;
+    },
+  });
+
+  // React to audit job completion
+  if (auditJob && auditState === "polling") {
+    if (auditJob.status === "completed") {
+      setViolations(auditJob.violations ?? []);
+      setAuditState("results");
+      setAuditJobId(null);
+    } else if (auditJob.status === "failed") {
+      setAuditError(auditJob.message || "Audit failed unexpectedly.");
+      setAuditState("failed");
+      setAuditJobId(null);
+    }
+  }
 
   const processingDocs = docs?.filter((d) => d.status === "processing") ?? [];
   const completedDocs = docs?.filter((d) => d.status === "completed") ?? [];
@@ -139,10 +166,11 @@ function Dashboard() {
         return;
       }
       setAuditState("loading");
+      setAuditError("");
       try {
-        const result = await checkSubmission(file, activeGraphIds);
-        setViolations(result);
-        setAuditState("results");
+        const { job_id } = await checkSubmission(file, activeGraphIds);
+        setAuditJobId(job_id);
+        setAuditState("polling");
       } catch {
         toast({ title: "Analysis failed", description: "Could not process the submission.", variant: "destructive" });
         setAuditState("idle");
@@ -154,6 +182,8 @@ function Dashboard() {
   const resetAudit = () => {
     setAuditState("idle");
     setViolations([]);
+    setAuditJobId(null);
+    setAuditError("");
   };
 
   const toggleFramework = (id: string) => {
@@ -215,6 +245,9 @@ function Dashboard() {
                           )}
                         </div>
                         <Progress value={doc.progress} className="h-2" />
+                        {doc.message && (
+                          <p className="text-[11px] text-muted-foreground font-mono truncate">{doc.message}</p>
+                        )}
                       </div>
                       <span className="text-xs text-muted-foreground shrink-0">{doc.progress}%</span>
                     </div>
@@ -356,7 +389,7 @@ function Dashboard() {
                 activeGraphIds={activeGraphIds}
                 onToggle={toggleFramework}
               />
-              {auditState === "results" && (
+              {(auditState === "results" || auditState === "failed") && (
                 <Button variant="outline" size="sm" onClick={resetAudit} className="gap-2 border-border/50">
                   <RotateCcw className="h-3.5 w-3.5" />
                   Check Another
@@ -373,6 +406,38 @@ function Dashboard() {
             )}
 
             {auditState === "loading" && <AnalysisLoader />}
+
+            {auditState === "polling" && (
+              <div className="flex flex-col items-center justify-center gap-6 py-16">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                  <div className="relative rounded-full bg-primary/10 p-6">
+                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                  </div>
+                </div>
+                <div className="w-full max-w-sm space-y-3">
+                  <Progress value={auditJob?.progress ?? 0} className="h-2.5" />
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground font-mono truncate">
+                      {auditJob?.message || "Starting audit…"}
+                    </p>
+                    <span className="text-xs text-muted-foreground shrink-0 ml-2">
+                      {auditJob?.progress ?? 0}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {auditState === "failed" && (
+              <div className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-5">
+                <AlertCircle className="h-5 w-5 text-destructive shrink-0" />
+                <div className="text-sm">
+                  <p className="font-medium text-destructive">Audit Failed</p>
+                  <p className="text-muted-foreground mt-0.5">{auditError}</p>
+                </div>
+              </div>
+            )}
 
             {auditState === "results" && (
               <>
