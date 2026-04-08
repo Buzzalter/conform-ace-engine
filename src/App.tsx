@@ -71,6 +71,30 @@ function Dashboard() {
     queryFn: fetchBanks,
   });
 
+  const { data: auditJob } = useQuery({
+    queryKey: ["auditJob", auditJobId],
+    queryFn: () => fetchAuditJob(auditJobId!),
+    enabled: !!auditJobId && auditState === "polling",
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (data && (data.status === "completed" || data.status === "failed")) return false;
+      return 2000;
+    },
+  });
+
+  // React to audit job completion
+  if (auditJob && auditState === "polling") {
+    if (auditJob.status === "completed") {
+      setViolations(auditJob.violations ?? []);
+      setAuditState("results");
+      setAuditJobId(null);
+    } else if (auditJob.status === "failed") {
+      setAuditError(auditJob.message || "Audit failed unexpectedly.");
+      setAuditState("failed");
+      setAuditJobId(null);
+    }
+  }
+
   const processingDocs = docs?.filter((d) => d.status === "processing") ?? [];
   const completedDocs = docs?.filter((d) => d.status === "completed") ?? [];
   const failedDocs = docs?.filter((d) => d.status === "failed") ?? [];
