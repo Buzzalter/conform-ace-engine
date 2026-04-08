@@ -44,6 +44,13 @@ export async function deleteRulebook(docId: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete rulebook");
 }
 
+export async function deleteKnowledgeBank(bankName: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/conformance/banks/${encodeURIComponent(bankName)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete Knowledge Bank");
+}
+
 export async function checkSubmission(file: File, active_domains: string[]): Promise<Violation[]> {
   const form = new FormData();
   form.append("file", file);
