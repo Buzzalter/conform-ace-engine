@@ -166,10 +166,11 @@ function Dashboard() {
         return;
       }
       setAuditState("loading");
+      setAuditError("");
       try {
-        const result = await checkSubmission(file, activeGraphIds);
-        setViolations(result);
-        setAuditState("results");
+        const { job_id } = await checkSubmission(file, activeGraphIds);
+        setAuditJobId(job_id);
+        setAuditState("polling");
       } catch {
         toast({ title: "Analysis failed", description: "Could not process the submission.", variant: "destructive" });
         setAuditState("idle");
