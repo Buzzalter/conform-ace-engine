@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatePresence } from "framer-motion";
 import { BookOpen, Shield, Loader2, RotateCcw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { FileDropzone } from "@/components/FileDropzone";
 import { RulebookCard } from "@/components/RulebookCard";
 import { AnalysisLoader } from "@/components/AnalysisLoader";
