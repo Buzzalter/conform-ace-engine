@@ -7,19 +7,19 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Progress } from "@/components/ui/progress";
 import { AnimatePresence } from "framer-motion";
 import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { FileDropzone } from "@/components/FileDropzone";
 import { RulebookCard } from "@/components/RulebookCard";
 import { AnalysisLoader } from "@/components/AnalysisLoader";
 import { ConformanceSuccess } from "@/components/ConformanceSuccess";
 import { ViolationCard } from "@/components/ViolationCard";
 import { FrameworkSelector } from "@/components/FrameworkSelector";
+import { BankCombobox } from "@/components/BankCombobox";
 import { ChatDrawer } from "@/components/ChatDrawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   fetchDocuments,
+  fetchBanks,
   uploadRulebook,
   deleteRulebook,
   checkSubmission,
@@ -35,7 +35,7 @@ function Dashboard() {
   const qc = useQueryClient();
   const [activeGraphIds, setActiveGraphIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [domainName, setDomainName] = useState("");
+  const [selectedBank, setSelectedBank] = useState("");
   const [auditState, setAuditState] = useState<AuditState>("idle");
   const [violations, setViolations] = useState<Violation[]>([]);
   const [jobsOpen, setJobsOpen] = useState(true);
@@ -50,6 +50,11 @@ function Dashboard() {
     },
   });
 
+  const { data: banks = [] } = useQuery({
+    queryKey: ["banks"],
+    queryFn: fetchBanks,
+  });
+
   const processingDocs = docs?.filter((d) => d.status === "processing") ?? [];
   const completedDocs = docs?.filter((d) => d.status === "completed") ?? [];
   const failedDocs = docs?.filter((d) => d.status === "failed") ?? [];
@@ -58,6 +63,7 @@ function Dashboard() {
     mutationFn: deleteRulebook,
     onSuccess: (_d, deletedId) => {
       qc.invalidateQueries({ queryKey: ["rulebooks"] });
+      qc.invalidateQueries({ queryKey: ["banks"] });
       setActiveGraphIds((prev) => prev.filter((id) => id !== deletedId));
       toast({ title: "Rulebook removed", description: "Document deleted from knowledge base." });
     },
@@ -69,19 +75,20 @@ function Dashboard() {
   const handleUpload = useCallback(
     async (file: File) => {
       setUploading(true);
-      const domains = domainName.trim() ? [domainName.trim()] : [file.name];
+      const bank = selectedBank.trim() || file.name;
       try {
-        await uploadRulebook(file, domains);
+        await uploadRulebook(file, [bank]);
         qc.invalidateQueries({ queryKey: ["rulebooks"] });
-        setDomainName("");
-        toast({ title: "Rulebook ingested", description: `${file.name} added to the knowledge graph.` });
+        qc.invalidateQueries({ queryKey: ["banks"] });
+        setSelectedBank("");
+        toast({ title: "Rulebook ingested", description: `${file.name} added to "${bank}".` });
       } catch {
         toast({ title: "Upload failed", description: "Could not ingest the rulebook.", variant: "destructive" });
       } finally {
         setUploading(false);
       }
     },
-    [qc, domainName]
+    [qc, selectedBank]
   );
 
   const handleSubmit = useCallback(
@@ -150,7 +157,7 @@ function Dashboard() {
                 <CollapsibleTrigger className="flex items-center justify-between w-full rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 transition-colors">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Active Ingestion Jobs ({processingDocs.length})
+                    Active Ingestions ({processingDocs.length})
                   </div>
                   <ChevronDown className={`h-4 w-4 transition-transform ${jobsOpen ? "rotate-180" : ""}`} />
                 </CollapsibleTrigger>
@@ -162,7 +169,14 @@ function Dashboard() {
                     >
                       <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
                       <div className="flex-1 min-w-0 space-y-1.5">
-                        <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
+                          {doc.bank && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                              {doc.bank}
+                            </span>
+                          )}
+                        </div>
                         <Progress value={doc.progress} className="h-2" />
                       </div>
                       <span className="text-xs text-muted-foreground shrink-0">{doc.progress}%</span>
@@ -199,17 +213,7 @@ function Dashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="domain-name" className="text-sm font-medium text-foreground">
-                    Knowledge Graph Name <span className="text-muted-foreground">(e.g., &apos;Navy Regulations&apos;)</span>
-                  </Label>
-                  <Input
-                    id="domain-name"
-                    placeholder="Enter a name or leave blank to use filename"
-                    value={domainName}
-                    onChange={(e) => setDomainName(e.target.value)}
-                  />
-                </div>
+                <BankCombobox banks={banks} value={selectedBank} onChange={setSelectedBank} />
                 <FileDropzone
                   onFileDrop={handleUpload}
                   label="Upload a conformance rulebook"

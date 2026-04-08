@@ -4,6 +4,7 @@ export interface RulebookDocument {
   id: string;
   name: string;
   uploaded_at: string;
+  bank: string;
   status: "processing" | "completed" | "failed";
   progress: number;
 }
@@ -20,6 +21,12 @@ export interface Violation {
 export async function fetchDocuments(): Promise<RulebookDocument[]> {
   const res = await fetch(`${BASE}/api/conformance/documents`);
   if (!res.ok) throw new Error("Failed to fetch documents");
+  return res.json();
+}
+
+export async function fetchBanks(): Promise<string[]> {
+  const res = await fetch(`${BASE}/api/conformance/banks`);
+  if (!res.ok) throw new Error("Failed to fetch banks");
   return res.json();
 }
 
