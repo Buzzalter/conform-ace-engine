@@ -57,9 +57,11 @@ function Dashboard() {
   const handleUpload = useCallback(
     async (file: File) => {
       setUploading(true);
+      const domains = domainName.trim() ? [domainName.trim()] : [file.name];
       try {
-        await uploadRulebook(file, [file.name]);
+        await uploadRulebook(file, domains);
         qc.invalidateQueries({ queryKey: ["rulebooks"] });
+        setDomainName("");
         toast({ title: "Rulebook ingested", description: `${file.name} added to the knowledge graph.` });
       } catch {
         toast({ title: "Upload failed", description: "Could not ingest the rulebook.", variant: "destructive" });
