@@ -26,7 +26,7 @@ export function FrameworkSelector({ documents, activeGraphIds, onToggle }: Frame
       </DialogTrigger>
       <DialogContent className="glass border-border/50">
         <DialogHeader>
-          <DialogTitle className="text-foreground">Select Rulebooks to Audit Against</DialogTitle>
+          <DialogTitle className="text-foreground">Select Knowledge Banks to Audit Against</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 mt-2 max-h-[50vh] overflow-y-auto">
           {documents.length === 0 ? (

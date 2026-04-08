@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Send, Loader2, Bot, User } from "lucide-react";
+import { Send, Loader2, Bot, User } from "lucide-react";
 import { askChatbot } from "@/lib/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -51,20 +51,20 @@ export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
 
   return (
     <>
-      <Button
+      <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg shadow-primary/25 bg-primary hover:bg-primary/90"
-        size="icon"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground pl-4 pr-5 py-3 shadow-lg shadow-primary/30 transition-all hover:shadow-xl hover:shadow-primary/40 hover:scale-105"
       >
-        <MessageCircle className="h-6 w-6" />
-      </Button>
+        <Bot className="h-5 w-5" />
+        <span className="text-sm font-semibold">Document Querying</span>
+      </button>
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="bottom" className="h-[60vh] glass border-t border-border/50 p-0 flex flex-col">
           <SheetHeader className="px-6 pt-4 pb-2 border-b border-border/40">
             <SheetTitle className="flex items-center gap-2 text-foreground">
               <Bot className="h-5 w-5 text-primary" />
-              Research Assistant
+              Document Querying
             </SheetTitle>
           </SheetHeader>
 
@@ -72,7 +72,7 @@ export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground text-sm">
                 <Bot className="h-10 w-10 mb-3 opacity-40" />
-                <p>Ask questions about your active rulebooks</p>
+                <p>Query your knowledge banks</p>
               </div>
             )}
             {messages.map((msg, i) => (
