@@ -64,6 +64,23 @@ function Dashboard() {
   const [jobsOpen, setJobsOpen] = useState(true);
   const [auditJobId, setAuditJobId] = useState<string | null>(null);
   const [auditError, setAuditError] = useState("");
+  const [integrityBank, setIntegrityBank] = useState<string | null>(null);
+  const [integrityReport, setIntegrityReport] = useState<string | null>(null);
+  const [integrityLoading, setIntegrityLoading] = useState(false);
+
+  const handleIntegrityScan = async (bankName: string) => {
+    setIntegrityBank(bankName);
+    setIntegrityReport(null);
+    setIntegrityLoading(true);
+    try {
+      const report = await runIntegrityScan(bankName);
+      setIntegrityReport(report);
+    } catch {
+      setIntegrityReport("**Error:** Failed to run integrity scan. Please try again.");
+    } finally {
+      setIntegrityLoading(false);
+    }
+  };
 
   const { data: docs, isLoading } = useQuery({
     queryKey: ["rulebooks"],
