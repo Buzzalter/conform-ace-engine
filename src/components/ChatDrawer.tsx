@@ -136,19 +136,19 @@ export function ChatDrawer({ activeGraphIds }: ChatDrawerProps) {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="bottom" className="h-[70vh] glass border-t border-border/50 p-0 flex flex-col">
           <SheetHeader className="px-6 pt-4 pb-2 border-b border-border/40">
-            <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-3 w-full">
               <SheetTitle className="flex items-center gap-2 text-foreground">
                 <Bot className="h-5 w-5 text-primary" />
                 Document Querying
               </SheetTitle>
               <Button
-                variant="ghost"
-                size="icon"
+                variant="outline"
+                size="sm"
                 onClick={handleNewConversation}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                title="Start new conversation"
+                className="h-7 text-xs gap-1.5"
               >
-                <RotateCcw className="h-4 w-4" />
+                <RotateCcw className="h-3 w-3" />
+                Start new chat
               </Button>
             </div>
           </SheetHeader>
