@@ -9,7 +9,7 @@ import type { RulebookDocument } from "@/lib/api";
 interface FrameworkSelectorProps {
   documents: RulebookDocument[];
   activeGraphIds: string[];
-  onToggle: (id: string) => void;
+  onToggle: (bankName: string) => void;
 }
 
 export function FrameworkSelector({ documents, activeGraphIds, onToggle }: FrameworkSelectorProps) {
@@ -23,14 +23,8 @@ export function FrameworkSelector({ documents, activeGraphIds, onToggle }: Frame
     return map;
   }, [documents]);
 
-  const toggleBank = (bankDocs: RulebookDocument[]) => {
-    const ids = bankDocs.map((d) => d.id);
-    const allSelected = ids.every((id) => activeGraphIds.includes(id));
-    if (allSelected) {
-      ids.forEach((id) => onToggle(id));
-    } else {
-      ids.filter((id) => !activeGraphIds.includes(id)).forEach((id) => onToggle(id));
-    }
+  const toggleBank = (bankName: string) => {
+    onToggle(bankName);
   };
 
   return (
@@ -59,18 +53,15 @@ export function FrameworkSelector({ documents, activeGraphIds, onToggle }: Frame
               </div>
             ) : (
               Array.from(grouped.entries()).map(([bank, bankDocs]) => {
-                const allSelected = bankDocs.every((d) => activeGraphIds.includes(d.id));
-                const someSelected = bankDocs.some((d) => activeGraphIds.includes(d.id));
+                const isSelected = activeGraphIds.includes(bank);
 
                 return (
                   <div key={bank} className="space-y-2">
                     {/* Bank-level toggle */}
                     <label className="flex items-center gap-3 cursor-pointer group">
                       <Checkbox
-                        checked={allSelected}
-                        // @ts-ignore – indeterminate is valid on the underlying element
-                        data-state={someSelected && !allSelected ? "indeterminate" : allSelected ? "checked" : "unchecked"}
-                        onCheckedChange={() => toggleBank(bankDocs)}
+                        checked={isSelected}
+                        onCheckedChange={() => toggleBank(bank)}
                       />
                       <div className="flex items-center gap-2">
                         <FolderOpen className="h-4 w-4 text-primary" />
@@ -81,24 +72,20 @@ export function FrameworkSelector({ documents, activeGraphIds, onToggle }: Frame
                       </div>
                     </label>
 
-                    {/* Individual docs */}
+                    {/* Individual docs (read-only, for reference) */}
                     <div className="ml-7 space-y-1.5">
                       {bankDocs.map((doc) => (
-                        <label
+                        <div
                           key={doc.id}
-                          className="flex items-center gap-3 rounded-lg border border-border/40 p-2.5 cursor-pointer hover:bg-accent/50 transition-colors"
+                          className="flex items-center gap-3 rounded-lg border border-border/40 p-2.5 opacity-75"
                         >
-                          <Checkbox
-                            checked={activeGraphIds.includes(doc.id)}
-                            onCheckedChange={() => onToggle(doc.id)}
-                          />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
                             <p className="text-xs text-muted-foreground">
                               Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}
                             </p>
                           </div>
-                        </label>
+                        </div>
                       ))}
                     </div>
                   </div>
