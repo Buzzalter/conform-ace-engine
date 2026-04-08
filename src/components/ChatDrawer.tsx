@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageCircle, Send, Loader2, Bot, User } from "lucide-react";
+import { Send, Loader2, Bot, User } from "lucide-react";
 import { askChatbot } from "@/lib/api";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
