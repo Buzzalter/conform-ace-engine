@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnimatePresence } from "framer-motion";
 import { BookOpen, Shield, Loader2, RotateCcw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { FileDropzone } from "@/components/FileDropzone";
 import { RulebookCard } from "@/components/RulebookCard";
 import { AnalysisLoader } from "@/components/AnalysisLoader";
@@ -31,6 +33,7 @@ function Dashboard() {
   const qc = useQueryClient();
   const [activeGraphIds, setActiveGraphIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [domainName, setDomainName] = useState("");
   const [auditState, setAuditState] = useState<AuditState>("idle");
   const [violations, setViolations] = useState<Violation[]>([]);
 
@@ -54,9 +57,11 @@ function Dashboard() {
   const handleUpload = useCallback(
     async (file: File) => {
       setUploading(true);
+      const domains = domainName.trim() ? [domainName.trim()] : [file.name];
       try {
-        await uploadRulebook(file, [file.name]);
+        await uploadRulebook(file, domains);
         qc.invalidateQueries({ queryKey: ["rulebooks"] });
+        setDomainName("");
         toast({ title: "Rulebook ingested", description: `${file.name} added to the knowledge graph.` });
       } catch {
         toast({ title: "Upload failed", description: "Could not ingest the rulebook.", variant: "destructive" });
@@ -64,7 +69,7 @@ function Dashboard() {
         setUploading(false);
       }
     },
-    [qc]
+    [qc, domainName]
   );
 
   const handleSubmit = useCallback(
@@ -139,12 +144,25 @@ function Dashboard() {
                 <span className="text-sm text-primary font-medium">Ingesting into Knowledge Graph…</span>
               </div>
             ) : (
-              <FileDropzone
-                onFileDrop={handleUpload}
-                label="Upload a conformance rulebook"
-                sublabel="PDF, DOCX, or TXT — drag & drop or click to browse"
-                compact
-              />
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="domain-name" className="text-sm font-medium text-foreground">
+                    Knowledge Graph Name <span className="text-muted-foreground">(e.g., &apos;Navy Regulations&apos;)</span>
+                  </Label>
+                  <Input
+                    id="domain-name"
+                    placeholder="Enter a name or leave blank to use filename"
+                    value={domainName}
+                    onChange={(e) => setDomainName(e.target.value)}
+                  />
+                </div>
+                <FileDropzone
+                  onFileDrop={handleUpload}
+                  label="Upload a conformance rulebook"
+                  sublabel="PDF, DOCX, or TXT — drag & drop or click to browse"
+                  compact
+                />
+              </div>
             )}
 
             <div className="space-y-3">
