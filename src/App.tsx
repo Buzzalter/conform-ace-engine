@@ -245,22 +245,21 @@ function Dashboard() {
   });
 
   const handleUpload = useCallback(
-    async (file: File) => {
+    async (file: File, bankName: string, priorityLevel: number) => {
       setUploading(true);
-      const bank = selectedBank.trim() || file.name;
       try {
-        await uploadRulebook(file, [bank]);
+        await uploadRulebook(file, [bankName], priorityLevel);
         qc.invalidateQueries({ queryKey: ["rulebooks"] });
         qc.invalidateQueries({ queryKey: ["banks"] });
-        setSelectedBank("");
-        toast({ title: "Rulebook ingested", description: `${file.name} added to "${bank}".` });
+        setUploadModalOpen(false);
+        toast({ title: "Rulebook ingested", description: `${file.name} added to "${bankName}".` });
       } catch {
         toast({ title: "Upload failed", description: "Could not ingest the rulebook.", variant: "destructive" });
       } finally {
         setUploading(false);
       }
     },
-    [qc, selectedBank]
+    [qc]
   );
 
   const handleSubmit = useCallback(
