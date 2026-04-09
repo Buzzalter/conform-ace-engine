@@ -394,13 +394,6 @@ function Dashboard() {
                         >
                           <Stethoscope className="h-4 w-4 text-primary/70" />
                         </button>
-                        <button
-                          className="p-2 rounded-md hover:bg-primary/10 transition-colors"
-                          title={`Resolve conflicts in "${bankName}"`}
-                          onClick={(e) => { e.stopPropagation(); handleResolveConflicts(bankName); }}
-                        >
-                          <Wand2 className="h-4 w-4 text-primary/70" />
-                        </button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <button
