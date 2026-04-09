@@ -77,7 +77,8 @@ function Dashboard() {
   const qc = useQueryClient();
   const [activeGraphIds, setActiveGraphIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [selectedBank, setSelectedBank] = useState("");
+   const [selectedBank, setSelectedBank] = useState("");
+   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [auditState, setAuditState] = useState<AuditState>("idle");
   const [violations, setViolations] = useState<Violation[]>([]);
   const [auditFilename, setAuditFilename] = useState("");
