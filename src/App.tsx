@@ -7,8 +7,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { AnimatePresence } from "framer-motion";
-import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, FileText, XCircle, Stethoscope, Wand2, Download, CheckCircle2, Eye, PenLine, Target } from "lucide-react";
+import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, FileText, XCircle, Stethoscope, Wand2, Download, CheckCircle2, Eye, PenLine, Target, Upload } from "lucide-react";
 import { FileDropzone } from "@/components/FileDropzone";
+import { UploadModal } from "@/components/UploadModal";
 import {
   AlertDialog,
   AlertDialogAction,
