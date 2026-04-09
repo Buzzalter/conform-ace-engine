@@ -11,12 +11,14 @@ export interface RulebookDocument {
 }
 
 export interface Violation {
+  title: string;
   quote: string;
-  rule: string;
-  section: string;
-  severity: "critical" | "major" | "minor";
+  rule_broken: string;
   source_document: string;
-  reasoning: string;
+  authority_level: string | number;
+  severity: "critical" | "major" | "minor" | "recommendation";
+  summary: string;
+  actions: string;
 }
 
 export async function fetchDocuments(): Promise<RulebookDocument[]> {
@@ -61,7 +63,7 @@ export async function checkSubmission(file: File, active_domains: string[]): Pro
   return res.json();
 }
 
-export async function fetchAuditJob(jobId: string): Promise<{ status: string; progress: number; message: string; violations: Violation[] }> {
+export async function fetchAuditJob(jobId: string): Promise<{ status: string; progress: number; message: string; filename: string; violations: Violation[] }> {
   const res = await fetch(`${BASE}/api/submission/job/${jobId}`);
   if (!res.ok) throw new Error("Failed to fetch job");
   return res.json();
@@ -72,6 +74,13 @@ export async function runIntegrityScan(bankName: string): Promise<string> {
   if (!res.ok) throw new Error("Failed to run integrity scan");
   const data = await res.json();
   return data.report;
+}
+
+export async function generateConsolidatedRulebook(bankName: string): Promise<string> {
+  const res = await fetch(`${BASE}/api/conformance/banks/${encodeURIComponent(bankName)}/resolve`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to generate rulebook");
+  const data = await res.json();
+  return data.document;
 }
 
 export async function askChatbot(query: string, active_domains: string[], history: {role: string, content: string}[]): Promise<string> {
