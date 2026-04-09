@@ -122,11 +122,11 @@ function Dashboard() {
     const opt = {
       margin: [10, 15] as [number, number],
       filename: `${resolveBank || "rulebook"}_consolidated.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
+      image: { type: "jpeg" as const, quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
+      jsPDF: { unit: "mm" as const, format: "a4" as const, orientation: "portrait" as const },
     };
-    html2pdf().set(opt).from(resolveContentRef.current).save();
+    (html2pdf() as any).set(opt).from(resolveContentRef.current).save();
   };
 
   const { data: docs, isLoading } = useQuery({
