@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { QueryClient, QueryClientProvider, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { AnimatePresence } from "framer-motion";
-import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, FileText, XCircle, Stethoscope } from "lucide-react";
+import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, FileText, XCircle, Stethoscope, Wand2, Download } from "lucide-react";
 import { FileDropzone } from "@/components/FileDropzone";
 import {
   AlertDialog,
@@ -38,6 +38,7 @@ import {
   checkSubmission,
   fetchAuditJob,
   runIntegrityScan,
+  generateConsolidatedRulebook,
   type Violation,
 } from "@/lib/api";
 import {
@@ -49,10 +50,25 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "@/hooks/use-toast";
+import html2pdf from "html2pdf.js";
 
 const queryClient = new QueryClient();
 
 type AuditState = "idle" | "loading" | "polling" | "results" | "failed";
+
+const markdownComponents = {
+  h1: ({ children }: any) => <h1 className="text-2xl font-bold text-primary mt-4 mb-3 pb-2 border-b border-border">{children}</h1>,
+  h2: ({ children }: any) => <h2 className="text-xl font-bold text-primary mt-6 mb-3 pb-2 border-b border-border">{children}</h2>,
+  h3: ({ children }: any) => <h3 className="text-lg font-semibold text-primary/80 mt-5 mb-2">{children}</h3>,
+  p: ({ children }: any) => <p className="text-foreground leading-relaxed mb-4 text-base">{children}</p>,
+  ul: ({ children }: any) => <ul className="list-disc pl-5 mb-4 space-y-1">{children}</ul>,
+  ol: ({ children }: any) => <ol className="list-decimal pl-5 mb-4 space-y-1">{children}</ol>,
+  li: ({ children }: any) => <li className="text-foreground ml-4 mb-2 text-base">{children}</li>,
+  strong: ({ children }: any) => <strong className="font-bold text-foreground bg-primary/10 px-1 rounded">{children}</strong>,
+  blockquote: ({ children }: any) => <blockquote className="border-l-4 border-primary/50 pl-4 my-4 italic text-muted-foreground">{children}</blockquote>,
+  code: ({ children }: any) => <code className="bg-secondary text-foreground px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>,
+  hr: () => <hr className="my-6 border-border" />,
+};
 
 function Dashboard() {
   const qc = useQueryClient();
@@ -61,12 +77,17 @@ function Dashboard() {
   const [selectedBank, setSelectedBank] = useState("");
   const [auditState, setAuditState] = useState<AuditState>("idle");
   const [violations, setViolations] = useState<Violation[]>([]);
+  const [auditFilename, setAuditFilename] = useState("");
   const [jobsOpen, setJobsOpen] = useState(true);
   const [auditJobId, setAuditJobId] = useState<string | null>(null);
   const [auditError, setAuditError] = useState("");
   const [integrityBank, setIntegrityBank] = useState<string | null>(null);
   const [integrityReport, setIntegrityReport] = useState<string | null>(null);
   const [integrityLoading, setIntegrityLoading] = useState(false);
+  const [resolveBank, setResolveBank] = useState<string | null>(null);
+  const [resolveReport, setResolveReport] = useState<string | null>(null);
+  const [resolveLoading, setResolveLoading] = useState(false);
+  const resolveContentRef = useRef<HTMLDivElement>(null);
 
   const handleIntegrityScan = async (bankName: string) => {
     setIntegrityBank(bankName);
@@ -80,6 +101,32 @@ function Dashboard() {
     } finally {
       setIntegrityLoading(false);
     }
+  };
+
+  const handleResolveConflicts = async (bankName: string) => {
+    setResolveBank(bankName);
+    setResolveReport(null);
+    setResolveLoading(true);
+    try {
+      const doc = await generateConsolidatedRulebook(bankName);
+      setResolveReport(doc);
+    } catch {
+      setResolveReport("**Error:** Failed to generate consolidated rulebook. Please try again.");
+    } finally {
+      setResolveLoading(false);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    if (!resolveContentRef.current) return;
+    const opt = {
+      margin: [10, 15],
+      filename: `${resolveBank || "rulebook"}_consolidated.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
+    };
+    html2pdf().set(opt).from(resolveContentRef.current).save();
   };
 
   const { data: docs, isLoading } = useQuery({
@@ -112,6 +159,7 @@ function Dashboard() {
   if (auditJob && auditState === "polling") {
     if (auditJob.status === "completed") {
       setViolations(auditJob.violations ?? []);
+      setAuditFilename(auditJob.filename || "");
       setAuditState("results");
       setAuditJobId(null);
     } else if (auditJob.status === "failed") {
@@ -208,6 +256,7 @@ function Dashboard() {
   const resetAudit = () => {
     setAuditState("idle");
     setViolations([]);
+    setAuditFilename("");
     setAuditJobId(null);
     setAuditError("");
   };
@@ -329,10 +378,17 @@ function Dashboard() {
                         </AccordionTrigger>
                         <button
                           className="p-2 rounded-md hover:bg-primary/10 transition-colors"
-                          title={`Scan "${bankName}" for conflicts`}
+                          title={`Analyse "${bankName}"`}
                           onClick={(e) => { e.stopPropagation(); handleIntegrityScan(bankName); }}
                         >
                           <Stethoscope className="h-4 w-4 text-primary/70" />
+                        </button>
+                        <button
+                          className="p-2 rounded-md hover:bg-primary/10 transition-colors"
+                          title={`Resolve conflicts in "${bankName}"`}
+                          onClick={(e) => { e.stopPropagation(); handleResolveConflicts(bankName); }}
+                        >
+                          <Wand2 className="h-4 w-4 text-primary/70" />
                         </button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -414,12 +470,12 @@ function Dashboard() {
             </div>
 
             {/* Integrity Scan Dialog */}
-             <Dialog open={!!integrityBank} onOpenChange={(open) => { if (!open) setIntegrityBank(null); }}>
+            <Dialog open={!!integrityBank} onOpenChange={(open) => { if (!open) setIntegrityBank(null); }}>
               <DialogContent className="max-w-3xl bg-card border-border p-0">
                 <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
                   <DialogTitle className="flex items-center gap-2 text-foreground">
                     <Stethoscope className="h-5 w-5 text-primary" />
-                    Corpus Integrity Report — {integrityBank}
+                    Analyse Bank — {integrityBank}
                   </DialogTitle>
                 </DialogHeader>
                 {integrityLoading ? (
@@ -429,24 +485,41 @@ function Dashboard() {
                   </div>
                 ) : integrityReport ? (
                   <div className="overflow-y-auto max-h-[70vh] px-6 py-4">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        h1: ({ children }) => <h1 className="text-2xl font-bold text-primary mt-4 mb-3 pb-2 border-b border-border">{children}</h1>,
-                        h2: ({ children }) => <h2 className="text-xl font-bold text-primary mt-6 mb-3 pb-2 border-b border-border">{children}</h2>,
-                        h3: ({ children }) => <h3 className="text-lg font-semibold text-primary/80 mt-5 mb-2">{children}</h3>,
-                        p: ({ children }) => <p className="text-foreground leading-relaxed mb-4 text-base">{children}</p>,
-                        ul: ({ children }) => <ul className="list-disc pl-5 mb-4 space-y-1">{children}</ul>,
-                        ol: ({ children }) => <ol className="list-decimal pl-5 mb-4 space-y-1">{children}</ol>,
-                        li: ({ children }) => <li className="text-foreground ml-4 mb-2 text-base">{children}</li>,
-                        strong: ({ children }) => <strong className="font-bold text-foreground bg-primary/10 px-1 rounded">{children}</strong>,
-                        blockquote: ({ children }) => <blockquote className="border-l-4 border-primary/50 pl-4 my-4 italic text-muted-foreground">{children}</blockquote>,
-                        code: ({ children }) => <code className="bg-secondary text-foreground px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>,
-                        hr: () => <hr className="my-6 border-border" />,
-                      }}
-                    >
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                       {integrityReport}
                     </ReactMarkdown>
+                  </div>
+                ) : null}
+              </DialogContent>
+            </Dialog>
+
+            {/* Resolve Conflicts Dialog */}
+            <Dialog open={!!resolveBank} onOpenChange={(open) => { if (!open) setResolveBank(null); }}>
+              <DialogContent className="max-w-3xl bg-card border-border p-0">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b border-border flex flex-row items-center justify-between">
+                  <DialogTitle className="flex items-center gap-2 text-foreground">
+                    <Wand2 className="h-5 w-5 text-primary" />
+                    Consolidated Rulebook — {resolveBank}
+                  </DialogTitle>
+                  {resolveReport && !resolveLoading && (
+                    <Button variant="outline" size="sm" className="gap-2 border-border" onClick={handleDownloadPdf}>
+                      <Download className="h-4 w-4" />
+                      Download Official PDF
+                    </Button>
+                  )}
+                </DialogHeader>
+                {resolveLoading ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-3">
+                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                    <p className="text-sm text-muted-foreground">Generating consolidated doctrine from your rulebooks…</p>
+                  </div>
+                ) : resolveReport ? (
+                  <div className="overflow-y-auto max-h-[70vh] px-6 py-4">
+                    <div ref={resolveContentRef}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                        {resolveReport}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 ) : null}
               </DialogContent>
@@ -537,10 +610,14 @@ function Dashboard() {
                   <ConformanceSuccess />
                 ) : (
                   <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      Found <span className="text-destructive font-semibold">{violations.length}</span> violation
-                      {violations.length !== 1 ? "s" : ""}
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-semibold text-foreground">
+                        Audit Results for: <span className="text-primary">{auditFilename || "Document"}</span>
+                      </h2>
+                      <span className="text-sm text-muted-foreground">
+                        <span className="text-destructive font-semibold">{violations.length}</span> issue{violations.length !== 1 ? "s" : ""} found
+                      </span>
+                    </div>
                     {violations.map((v, i) => (
                       <ViolationCard key={i} violation={v} index={i} />
                     ))}
