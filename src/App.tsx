@@ -415,6 +415,13 @@ function Dashboard() {
                         >
                           <Stethoscope className="h-4 w-4 text-primary/70" />
                         </button>
+                        <button
+                          className="p-2 rounded-md hover:bg-primary/10 transition-colors"
+                          title={`Simulate impact on "${bankName}"`}
+                          onClick={(e) => { e.stopPropagation(); setSimulateBank(bankName); setSimulateResults(null); setSimulateInput(""); }}
+                        >
+                          <Target className="h-4 w-4 text-primary/70" />
+                        </button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <button
@@ -599,6 +606,93 @@ function Dashboard() {
                     </div>
                   </>
                 )}
+              </DialogContent>
+            </Dialog>
+            {/* Modal C: Impact Simulator */}
+            <Dialog open={!!simulateBank} onOpenChange={(open) => { if (!open) setSimulateBank(null); }}>
+              <DialogContent className="max-w-2xl bg-card border-border p-0 max-h-[85vh] flex flex-col">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+                  <DialogTitle className="flex items-center gap-2 text-foreground">
+                    <Target className="h-5 w-5 text-primary" />
+                    Impact Simulator — {simulateBank}
+                  </DialogTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Test how a proposed rule change affects your existing doctrine.</p>
+                </DialogHeader>
+
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 min-h-0">
+                  {/* Input */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Proposed Change</label>
+                    <textarea
+                      value={simulateInput}
+                      onChange={(e) => setSimulateInput(e.target.value)}
+                      className="w-full min-h-[120px] bg-secondary/50 border border-border rounded-lg p-3 text-sm text-foreground leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
+                      placeholder="Enter proposed rule change or new doctrine..."
+                    />
+                    <Button
+                      onClick={handleSimulateImpact}
+                      disabled={!simulateInput.trim() || simulateLoading}
+                      className="gap-2 w-full"
+                    >
+                      {simulateLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />}
+                      Calculate Blast Radius
+                    </Button>
+                  </div>
+
+                  {/* Loading */}
+                  {simulateLoading && (
+                    <div className="flex flex-col items-center py-10 gap-3">
+                      <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                      <p className="text-sm text-muted-foreground">Calculating blast radius…</p>
+                    </div>
+                  )}
+
+                  {/* Results */}
+                  {simulateResults && !simulateLoading && (
+                    <div className="space-y-3">
+                      {simulateResults.length === 0 ? (
+                        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-3">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                          <p className="text-sm text-foreground font-medium">No rules impacted. This change is safe to implement.</p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+                            <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                            <p className="text-sm text-foreground font-medium">
+                              ⚠️ {simulateResults.length} Rule{simulateResults.length !== 1 ? "s" : ""} Impacted
+                            </p>
+                          </div>
+                          {simulateResults.map((impact, i) => (
+                            <div
+                              key={i}
+                              className={`rounded-xl border p-4 space-y-2 ${
+                                impact.impact_level === "Critical"
+                                  ? "border-destructive/30 bg-destructive/5"
+                                  : "border-amber-500/30 bg-amber-500/5"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-sm font-semibold text-foreground">{impact.rule_affected}</p>
+                                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                                  impact.impact_level === "Critical"
+                                    ? "bg-destructive/15 text-destructive"
+                                    : "bg-amber-500/15 text-amber-500"
+                                }`}>
+                                  {impact.impact_level}
+                                </span>
+                              </div>
+                              <span className="inline-flex text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+                                {impact.source_document}
+                              </span>
+                              <p className="text-sm text-muted-foreground leading-relaxed">{impact.reasoning}</p>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </DialogContent>
             </Dialog>
           </TabsContent>
