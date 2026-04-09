@@ -8,6 +8,7 @@ export interface RulebookDocument {
   status: "processing" | "completed" | "failed";
   progress: number;
   message?: string;
+  priority_level?: number;
 }
 
 export interface Violation {
