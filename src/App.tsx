@@ -93,6 +93,25 @@ function Dashboard() {
   const [editorLoading, setEditorLoading] = useState(false);
   const [editorTab, setEditorTab] = useState<"edit" | "preview">("edit");
   const editorPreviewRef = useRef<HTMLDivElement>(null);
+  // Impact Simulator state
+  const [simulateBank, setSimulateBank] = useState<string | null>(null);
+  const [simulateInput, setSimulateInput] = useState("");
+  const [simulateResults, setSimulateResults] = useState<Impact[] | null>(null);
+  const [simulateLoading, setSimulateLoading] = useState(false);
+
+  const handleSimulateImpact = async () => {
+    if (!simulateBank || !simulateInput.trim()) return;
+    setSimulateLoading(true);
+    setSimulateResults(null);
+    try {
+      const impacts = await simulateImpact(simulateBank, simulateInput.trim());
+      setSimulateResults(impacts);
+    } catch {
+      toast({ title: "Simulation failed", description: "Could not calculate blast radius.", variant: "destructive" });
+    } finally {
+      setSimulateLoading(false);
+    }
+  };
 
   const handleIntegrityScan = async (bankName: string) => {
     setIntegrityBank(bankName);
