@@ -372,22 +372,21 @@ function Dashboard() {
               </p>
             </div>
 
-            {uploading ? (
-              <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-6">
-                <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                <span className="text-sm text-primary font-medium">Ingesting into Knowledge Graph…</span>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <BankCombobox banks={banks} value={selectedBank} onChange={setSelectedBank} onDeleteBank={(bank) => deleteBankMutation.mutate(bank)} />
-                <FileDropzone
-                  onFileDrop={handleUpload}
-                  label="Upload a conformance rulebook"
-                  sublabel="PDF, DOCX, or TXT — drag & drop or click to browse"
-                  compact
-                />
-              </div>
-            )}
+            <div className="flex justify-center">
+              <Button onClick={() => setUploadModalOpen(true)} className="gap-2">
+                <Upload className="h-4 w-4" />
+                Upload New Document
+              </Button>
+            </div>
+
+            <UploadModal
+              open={uploadModalOpen}
+              onOpenChange={setUploadModalOpen}
+              banks={banks}
+              onSubmit={handleUpload}
+              onDeleteBank={(bank) => deleteBankMutation.mutate(bank)}
+              uploading={uploading}
+            />
 
             {/* Grouped Accordion List */}
             <div className="space-y-2">
