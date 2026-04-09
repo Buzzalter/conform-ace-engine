@@ -84,10 +84,13 @@ function Dashboard() {
   const [integrityBank, setIntegrityBank] = useState<string | null>(null);
   const [integrityReport, setIntegrityReport] = useState<string | null>(null);
   const [integrityLoading, setIntegrityLoading] = useState(false);
-  const [resolveBank, setResolveBank] = useState<string | null>(null);
-  const [resolveReport, setResolveReport] = useState<string | null>(null);
-  const [resolveLoading, setResolveLoading] = useState(false);
-  const resolveContentRef = useRef<HTMLDivElement>(null);
+  // HITL Editor state
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorBank, setEditorBank] = useState<string | null>(null);
+  const [editorContent, setEditorContent] = useState("");
+  const [editorLoading, setEditorLoading] = useState(false);
+  const [editorTab, setEditorTab] = useState<"edit" | "preview">("edit");
+  const editorPreviewRef = useRef<HTMLDivElement>(null);
 
   const handleIntegrityScan = async (bankName: string) => {
     setIntegrityBank(bankName);
@@ -103,30 +106,38 @@ function Dashboard() {
     }
   };
 
-  const handleResolveConflicts = async (bankName: string) => {
-    setResolveBank(bankName);
-    setResolveReport(null);
-    setResolveLoading(true);
+  const handleDraftDoctrine = async (bankName: string) => {
+    // Close Modal A, open Modal B with loading
+    setIntegrityBank(null);
+    setEditorBank(bankName);
+    setEditorContent("");
+    setEditorLoading(true);
+    setEditorOpen(true);
+    setEditorTab("edit");
     try {
       const doc = await generateConsolidatedRulebook(bankName);
-      setResolveReport(doc);
+      setEditorContent(doc);
     } catch {
-      setResolveReport("**Error:** Failed to generate consolidated rulebook. Please try again.");
+      setEditorContent("# Error\n\nFailed to generate consolidated rulebook. Please try again.");
     } finally {
-      setResolveLoading(false);
+      setEditorLoading(false);
     }
   };
 
-  const handleDownloadPdf = () => {
-    if (!resolveContentRef.current) return;
+  const handleApproveAndDownload = () => {
+    if (!editorPreviewRef.current) return;
     const opt = {
       margin: [10, 15] as [number, number],
-      filename: `${resolveBank || "rulebook"}_consolidated.pdf`,
+      filename: `${editorBank || "rulebook"}_consolidated.pdf`,
       image: { type: "jpeg" as const, quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
       jsPDF: { unit: "mm" as const, format: "a4" as const, orientation: "portrait" as const },
     };
-    (html2pdf() as any).set(opt).from(resolveContentRef.current).save();
+    (html2pdf() as any).set(opt).from(editorPreviewRef.current).save().then(() => {
+      setEditorOpen(false);
+      setEditorBank(null);
+      toast({ title: "PDF Downloaded", description: "Your approved doctrine has been saved." });
+    });
   };
 
   const { data: docs, isLoading } = useQuery({
