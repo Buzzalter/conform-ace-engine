@@ -40,10 +40,11 @@ export async function fetchBanks(): Promise<string[]> {
   return res.json();
 }
 
-export async function uploadRulebook(file: File, active_domains: string[]): Promise<RulebookDocument> {
+export async function uploadRulebook(file: File, active_domains: string[], priorityLevel: number): Promise<RulebookDocument> {
   const form = new FormData();
   form.append("file", file);
   form.append("active_domains", JSON.stringify(active_domains));
+  form.append("priority_level", priorityLevel.toString());
   const res = await fetch(`${BASE}/api/conformance/upload`, { method: "POST", body: form });
   if (!res.ok) throw new Error("Failed to upload rulebook");
   return res.json();

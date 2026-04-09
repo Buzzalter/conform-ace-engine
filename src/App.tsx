@@ -7,8 +7,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
 import { AnimatePresence } from "framer-motion";
-import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, FileText, XCircle, Stethoscope, Wand2, Download, CheckCircle2, Eye, PenLine, Target } from "lucide-react";
+import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, FileText, XCircle, Stethoscope, Wand2, Download, CheckCircle2, Eye, PenLine, Target, Upload } from "lucide-react";
 import { FileDropzone } from "@/components/FileDropzone";
+import { UploadModal } from "@/components/UploadModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,7 +77,8 @@ function Dashboard() {
   const qc = useQueryClient();
   const [activeGraphIds, setActiveGraphIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [selectedBank, setSelectedBank] = useState("");
+   const [selectedBank, setSelectedBank] = useState("");
+   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [auditState, setAuditState] = useState<AuditState>("idle");
   const [violations, setViolations] = useState<Violation[]>([]);
   const [auditFilename, setAuditFilename] = useState("");
@@ -243,22 +245,21 @@ function Dashboard() {
   });
 
   const handleUpload = useCallback(
-    async (file: File) => {
+    async (file: File, bankName: string, priorityLevel: number) => {
       setUploading(true);
-      const bank = selectedBank.trim() || file.name;
       try {
-        await uploadRulebook(file, [bank]);
+        await uploadRulebook(file, [bankName], priorityLevel);
         qc.invalidateQueries({ queryKey: ["rulebooks"] });
         qc.invalidateQueries({ queryKey: ["banks"] });
-        setSelectedBank("");
-        toast({ title: "Rulebook ingested", description: `${file.name} added to "${bank}".` });
+        setUploadModalOpen(false);
+        toast({ title: "Rulebook ingested", description: `${file.name} added to "${bankName}".` });
       } catch {
         toast({ title: "Upload failed", description: "Could not ingest the rulebook.", variant: "destructive" });
       } finally {
         setUploading(false);
       }
     },
-    [qc, selectedBank]
+    [qc]
   );
 
   const handleSubmit = useCallback(
@@ -371,22 +372,21 @@ function Dashboard() {
               </p>
             </div>
 
-            {uploading ? (
-              <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 p-6">
-                <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                <span className="text-sm text-primary font-medium">Ingesting into Knowledge Graph…</span>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <BankCombobox banks={banks} value={selectedBank} onChange={setSelectedBank} onDeleteBank={(bank) => deleteBankMutation.mutate(bank)} />
-                <FileDropzone
-                  onFileDrop={handleUpload}
-                  label="Upload a conformance rulebook"
-                  sublabel="PDF, DOCX, or TXT — drag & drop or click to browse"
-                  compact
-                />
-              </div>
-            )}
+            <div className="flex justify-center">
+              <Button onClick={() => setUploadModalOpen(true)} className="gap-2">
+                <Upload className="h-4 w-4" />
+                Upload New Document
+              </Button>
+            </div>
+
+            <UploadModal
+              open={uploadModalOpen}
+              onOpenChange={setUploadModalOpen}
+              banks={banks}
+              onSubmit={handleUpload}
+              onDeleteBank={(bank) => deleteBankMutation.mutate(bank)}
+              uploading={uploading}
+            />
 
             {/* Grouped Accordion List */}
             <div className="space-y-2">
