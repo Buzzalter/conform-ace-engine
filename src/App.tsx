@@ -409,18 +409,20 @@ function Dashboard() {
                           </div>
                         </AccordionTrigger>
                         <button
-                          className="p-2 rounded-md hover:bg-primary/10 transition-colors"
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-primary/10 transition-colors text-xs font-medium text-primary/70"
                           title={`Analyse "${bankName}"`}
                           onClick={(e) => { e.stopPropagation(); handleIntegrityScan(bankName); }}
                         >
-                          <Stethoscope className="h-4 w-4 text-primary/70" />
+                          <Stethoscope className="h-4 w-4" />
+                          Analyse Bank
                         </button>
                         <button
-                          className="p-2 rounded-md hover:bg-primary/10 transition-colors"
-                          title={`Simulate impact on "${bankName}"`}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md hover:bg-primary/10 transition-colors text-xs font-medium text-primary/70"
+                          title={`Resolve conflicts in "${bankName}"`}
                           onClick={(e) => { e.stopPropagation(); setSimulateBank(bankName); setSimulateResults(null); setSimulateInput(""); }}
                         >
-                          <Target className="h-4 w-4 text-primary/70" />
+                          <Target className="h-4 w-4" />
+                          Resolve Conflict &amp; Consolidate
                         </button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
