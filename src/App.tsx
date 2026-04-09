@@ -473,14 +473,20 @@ function Dashboard() {
               )}
             </div>
 
-            {/* Integrity Scan Dialog */}
+            {/* Modal A: Integrity Analysis Report */}
             <Dialog open={!!integrityBank} onOpenChange={(open) => { if (!open) setIntegrityBank(null); }}>
               <DialogContent className="max-w-3xl bg-card border-border p-0">
-                <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b border-border flex flex-row items-center justify-between">
                   <DialogTitle className="flex items-center gap-2 text-foreground">
                     <Stethoscope className="h-5 w-5 text-primary" />
                     Analyse Bank — {integrityBank}
                   </DialogTitle>
+                  {integrityReport && !integrityLoading && (
+                    <Button size="sm" className="gap-2" onClick={() => handleDraftDoctrine(integrityBank!)}>
+                      <Wand2 className="h-4 w-4" />
+                      Draft Resolved Doctrine
+                    </Button>
+                  )}
                 </DialogHeader>
                 {integrityLoading ? (
                   <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -497,35 +503,81 @@ function Dashboard() {
               </DialogContent>
             </Dialog>
 
-            {/* Resolve Conflicts Dialog */}
-            <Dialog open={!!resolveBank} onOpenChange={(open) => { if (!open) setResolveBank(null); }}>
-              <DialogContent className="max-w-3xl bg-card border-border p-0">
-                <DialogHeader className="px-6 pt-6 pb-4 border-b border-border flex flex-row items-center justify-between">
+            {/* Modal B: HITL Doctrine Editor */}
+            <Dialog open={editorOpen} onOpenChange={(open) => { if (!open) { setEditorOpen(false); setEditorBank(null); } }}>
+              <DialogContent className="max-w-4xl bg-card border-border p-0 max-h-[90vh] flex flex-col">
+                <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
                   <DialogTitle className="flex items-center gap-2 text-foreground">
-                    <Wand2 className="h-5 w-5 text-primary" />
-                    Consolidated Rulebook — {resolveBank}
+                    <PenLine className="h-5 w-5 text-primary" />
+                    Doctrine Editor — {editorBank}
                   </DialogTitle>
-                  {resolveReport && !resolveLoading && (
-                    <Button variant="outline" size="sm" className="gap-2 border-border" onClick={handleDownloadPdf}>
-                      <Download className="h-4 w-4" />
-                      Download Official PDF
-                    </Button>
-                  )}
+                  <p className="text-xs text-muted-foreground mt-1">Review and edit the AI-generated doctrine before approving.</p>
                 </DialogHeader>
-                {resolveLoading ? (
-                  <div className="flex flex-col items-center justify-center py-16 gap-3">
+
+                {editorLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-3">
                     <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                    <p className="text-sm text-muted-foreground">Generating consolidated doctrine from your rulebooks…</p>
+                    <p className="text-sm text-muted-foreground">AI is drafting the consolidated manual…</p>
                   </div>
-                ) : resolveReport ? (
-                  <div className="overflow-y-auto max-h-[70vh] px-6 py-4">
-                    <div ref={resolveContentRef}>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                        {resolveReport}
-                      </ReactMarkdown>
+                ) : (
+                  <>
+                    {/* Tab toggle */}
+                    <div className="flex items-center gap-1 px-6 pt-3 shrink-0">
+                      <Button
+                        variant={editorTab === "edit" ? "default" : "ghost"}
+                        size="sm"
+                        className="gap-1.5 text-xs"
+                        onClick={() => setEditorTab("edit")}
+                      >
+                        <PenLine className="h-3.5 w-3.5" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant={editorTab === "preview" ? "default" : "ghost"}
+                        size="sm"
+                        className="gap-1.5 text-xs"
+                        onClick={() => setEditorTab("preview")}
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        Preview
+                      </Button>
                     </div>
-                  </div>
-                ) : null}
+
+                    {/* Content area */}
+                    <div className="flex-1 overflow-y-auto px-6 py-3 min-h-0">
+                      {editorTab === "edit" ? (
+                        <textarea
+                          value={editorContent}
+                          onChange={(e) => setEditorContent(e.target.value)}
+                          className="w-full h-full min-h-[50vh] bg-secondary/50 border border-border rounded-lg p-4 text-sm text-foreground font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
+                          placeholder="Markdown content will appear here…"
+                          spellCheck={false}
+                        />
+                      ) : (
+                        <div ref={editorPreviewRef} className="rounded-lg border border-border bg-secondary/20 p-6">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                            {editorContent}
+                          </ReactMarkdown>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        {editorContent.length.toLocaleString()} characters · Markdown supported
+                      </p>
+                      <Button
+                        className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                        onClick={() => { setEditorTab("preview"); setTimeout(handleApproveAndDownload, 300); }}
+                        disabled={!editorContent.trim()}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Approve & Download Official PDF
+                      </Button>
+                    </div>
+                  </>
+                )}
               </DialogContent>
             </Dialog>
           </TabsContent>
