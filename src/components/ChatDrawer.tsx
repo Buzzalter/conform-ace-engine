@@ -155,6 +155,17 @@ export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
                 New Chat
               </Button>
             </div>
+            {activeGraphIds.length > 0 && (
+              <div className="flex items-center gap-1.5 px-6 pb-3 flex-wrap">
+                <Database className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-[11px] text-muted-foreground mr-1">Active:</span>
+                {activeGraphIds.map((id) => (
+                  <Badge key={id} variant="secondary" className="text-[11px] px-2 py-0.5 bg-primary/10 text-primary border-primary/20">
+                    {id}
+                  </Badge>
+                ))}
+              </div>
+            )}
           </SheetHeader>
 
           <div className="flex flex-1 overflow-hidden">
