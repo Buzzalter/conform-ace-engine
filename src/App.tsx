@@ -120,7 +120,7 @@ function Dashboard() {
   const handleDownloadPdf = () => {
     if (!resolveContentRef.current) return;
     const opt = {
-      margin: [10, 15],
+      margin: [10, 15] as [number, number],
       filename: `${resolveBank || "rulebook"}_consolidated.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true },
