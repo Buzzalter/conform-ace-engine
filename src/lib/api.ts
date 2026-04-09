@@ -21,6 +21,13 @@ export interface Violation {
   actions: string;
 }
 
+export interface Impact {
+  impact_level: "Critical" | "Warning";
+  rule_affected: string;
+  source_document: string;
+  reasoning: string;
+}
+
 export async function fetchDocuments(): Promise<RulebookDocument[]> {
   const res = await fetch(`${BASE}/api/conformance/documents`);
   if (!res.ok) throw new Error("Failed to fetch documents");
@@ -91,4 +98,13 @@ export async function askChatbot(query: string, active_domains: string[], histor
   const res = await fetch(`${BASE}/api/chat`, { method: "POST", body: form });
   if (!res.ok) throw new Error("Failed to get chatbot response");
   return res.text();
+}
+
+export async function simulateImpact(bankName: string, proposedChange: string): Promise<Impact[]> {
+  const form = new FormData();
+  form.append("proposed_change", proposedChange);
+  const res = await fetch(`${BASE}/api/conformance/banks/${encodeURIComponent(bankName)}/simulate`, { method: "POST", body: form });
+  if (!res.ok) throw new Error("Failed to simulate impact");
+  const data = await res.json();
+  return data.impacts;
 }
