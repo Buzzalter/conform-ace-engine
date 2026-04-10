@@ -37,7 +37,7 @@ interface ChatMessage {
   citations?: Citation[];
 }
 
-// Parse [c.f "DocumentName.pdf"] tags in markdown and render as clickable badges
+// Render markdown with inline [c.f "..."] citation badges
 function CitationRenderer({
   content,
   citations,
@@ -47,43 +47,82 @@ function CitationRenderer({
   citations: Citation[];
   onCiteClick: (c: Citation) => void;
 }) {
-  const parts = content.split(/(\[c\.f\s+"[^"]*"\])/g);
+  // Replace citation tags with placeholder tokens that survive markdown parsing
+  const CITE_PLACEHOLDER = "%%CITE_";
+  const citeRegex = /\[c\.f\s+"([^"]*)"\]/g;
+  const citeMap: Record<string, string> = {};
+  let idx = 0;
+  const processed = content.replace(citeRegex, (_match, docName) => {
+    const token = `${CITE_PLACEHOLDER}${idx}%%`;
+    citeMap[token] = docName;
+    idx++;
+    return token;
+  });
+
+  // Custom text renderer that injects citation badges inline
+  const renderTextWithCites = (text: string) => {
+    const tokenRegex = /(%%CITE_\d+%%)/g;
+    const segments = text.split(tokenRegex);
+    if (segments.length === 1) return text;
+    return (
+      <>
+        {segments.map((seg, i) => {
+          const docName = citeMap[seg];
+          if (docName) {
+            const citation = citations.find((c) => c.doc_name === docName);
+            if (citation) {
+              return (
+                <Tooltip key={i}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => onCiteClick(citation)}
+                      className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-primary/20 text-primary text-[11px] font-bold hover:bg-primary/30 transition-colors mx-0.5 align-baseline"
+                    >
+                      {docName}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs">
+                    <p className="font-semibold text-xs">{citation.doc_name} — p.{citation.page_num}</p>
+                    <p className="text-xs text-muted-foreground mt-1 italic line-clamp-3">"{citation.quote}"</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+            return <span key={i} className="text-muted-foreground text-xs">[{docName}]</span>;
+          }
+          return <span key={i}>{seg}</span>;
+        })}
+      </>
+    );
+  };
 
   return (
     <div className="prose prose-invert prose-sm max-w-none">
-      {parts.map((part, i) => {
-        const match = part.match(/\[c\.f\s+"([^"]*)"\]/);
-        if (match) {
-          const docName = match[1];
-          const citation = citations.find((c) => c.doc_name === docName);
-          if (citation) {
-            return (
-              <Tooltip key={i}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => onCiteClick(citation)}
-                    className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-primary/20 text-primary text-[11px] font-bold hover:bg-primary/30 transition-colors mx-0.5 align-baseline"
-                  >
-                    {docName}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
-                  <p className="font-semibold text-xs">{citation.doc_name} — p.{citation.page_num}</p>
-                  <p className="text-xs text-muted-foreground mt-1 italic line-clamp-3">"{citation.quote}"</p>
-                </TooltipContent>
-              </Tooltip>
-            );
-          }
-          return <span key={i} className="text-muted-foreground text-xs">[{docName}]</span>;
-        }
-        return (
-          <ReactMarkdown key={i} remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
-            {part}
-          </ReactMarkdown>
-        );
-      })}
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={{
+          p: ({ children, ...props }) => <p {...props}>{processChildren(children, renderTextWithCites)}</p>,
+          li: ({ children, ...props }) => <li {...props}>{processChildren(children, renderTextWithCites)}</li>,
+          td: ({ children, ...props }) => <td {...props}>{processChildren(children, renderTextWithCites)}</td>,
+        }}
+      >
+        {processed}
+      </ReactMarkdown>
     </div>
   );
+}
+
+// Recursively process React children, replacing string nodes that contain citation tokens
+function processChildren(
+  children: React.ReactNode,
+  renderFn: (text: string) => React.ReactNode,
+): React.ReactNode {
+  if (typeof children === "string") return renderFn(children);
+  if (Array.isArray(children)) return children.map((child, i) => (
+    <span key={i}>{processChildren(child, renderFn)}</span>
+  ));
+  return children;
 }
 
 export default function ResearchAssistant() {
