@@ -19,6 +19,9 @@ import {
 import { toast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface ChatMessage {
@@ -70,7 +73,7 @@ function CitationRenderer({
         }
         // Render normal markdown
         return (
-          <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown key={i} remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
             {part}
           </ReactMarkdown>
         );
