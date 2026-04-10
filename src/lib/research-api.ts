@@ -49,7 +49,13 @@ export async function researchChat(query: string, activeTopics: string[]): Promi
   form.append("active_topics", JSON.stringify(activeTopics));
   const res = await fetch(`${BASE}/api/research/chat`, { method: "POST", body: form });
   if (!res.ok) throw new Error("Failed to get research chat response");
-  return res.json();
+  const json = await res.json();
+  // Handle both top-level and nested response shapes
+  const data = json.data ?? json;
+  return {
+    answer: data.answer ?? data.response ?? "",
+    citations: data.citations ?? [],
+  };
 }
 
 export async function deleteResearchDocument(id: string): Promise<void> {
