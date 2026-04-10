@@ -83,7 +83,11 @@ function CitationRenderer({
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-xs">
                     <p className="font-semibold text-xs">{citation.doc_name} — p.{citation.page_num}</p>
-                    <p className="text-xs text-muted-foreground mt-1 italic line-clamp-3">"{citation.quote}"</p>
+                    <div className="text-xs text-muted-foreground mt-1 italic line-clamp-3 prose prose-xs dark:prose-invert max-w-none">
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                        {citation.quote}
+                      </ReactMarkdown>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               );
@@ -427,8 +431,10 @@ export default function ResearchAssistant() {
                         <span>Simulated PDF View</span>
                       </div>
                       <hr className="border-border" />
-                      <blockquote className="border-l-4 border-primary/50 pl-4 italic text-foreground leading-relaxed text-sm">
-                        "{activeCitation.quote}"
+                      <blockquote className="border-l-4 border-primary/50 pl-4 italic text-foreground leading-relaxed text-sm prose prose-sm dark:prose-invert max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
+                          {activeCitation.quote}
+                        </ReactMarkdown>
                       </blockquote>
                       <p className="text-[11px] text-muted-foreground">
                         Source: {activeCitation.doc_name}, Page {activeCitation.page_num}
