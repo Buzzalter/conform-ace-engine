@@ -51,3 +51,13 @@ export async function researchChat(query: string, activeTopics: string[]): Promi
   if (!res.ok) throw new Error("Failed to get research chat response");
   return res.json();
 }
+
+export async function deleteResearchDocument(id: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/research/documents/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete research document");
+}
+
+export async function deleteResearchTopic(topicName: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/research/topics/${encodeURIComponent(topicName)}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete research topic");
+}

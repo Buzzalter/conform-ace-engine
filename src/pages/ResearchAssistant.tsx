@@ -1,18 +1,25 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { FileDropzone } from "@/components/FileDropzone";
 import { TopicCombobox } from "@/components/TopicCombobox";
-import { Upload, Loader2, Send, X, FileText, BookOpen, MessageSquare } from "lucide-react";
+import { Upload, Loader2, Send, X, FileText, BookOpen, MessageSquare, Trash2, Settings } from "lucide-react";
 import {
   fetchResearchTopics,
   fetchResearchDocuments,
   uploadResearchDocument,
   researchChat,
+  deleteResearchDocument,
+  deleteResearchTopic,
   type Citation,
   type ChatResponse,
 } from "@/lib/research-api";
@@ -40,7 +47,6 @@ function CitationRenderer({
   citations: Citation[];
   onCiteClick: (c: Citation) => void;
 }) {
-  // Split on <cite id="..."/> patterns
   const parts = content.split(/(<cite\s+id="[^"]*"\s*\/>)/g);
 
   return (
@@ -71,7 +77,6 @@ function CitationRenderer({
           }
           return <span key={i} className="text-muted-foreground text-xs">[?]</span>;
         }
-        // Render normal markdown
         return (
           <ReactMarkdown key={i} remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
             {part}
@@ -87,6 +92,7 @@ export default function ResearchAssistant() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadTopics, setUploadTopics] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [topicManagerOpen, setTopicManagerOpen] = useState(false);
 
   // Chat state
   const [chatTopics, setChatTopics] = useState<string[]>([]);
@@ -108,6 +114,31 @@ export default function ResearchAssistant() {
       const data = query.state.data;
       if (data && data.some((d) => d.status === "processing")) return 2000;
       return false;
+    },
+  });
+
+  const deleteDocMutation = useMutation({
+    mutationFn: deleteResearchDocument,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["researchDocs"] });
+      toast({ title: "Document deleted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete document", variant: "destructive" });
+    },
+  });
+
+  const deleteTopicMutation = useMutation({
+    mutationFn: deleteResearchTopic,
+    onSuccess: (_data, topicName) => {
+      qc.invalidateQueries({ queryKey: ["researchTopics"] });
+      qc.invalidateQueries({ queryKey: ["researchDocs"] });
+      setUploadTopics((prev) => prev.filter((t) => t !== topicName));
+      setChatTopics((prev) => prev.filter((t) => t !== topicName));
+      toast({ title: "Topic deleted", description: `"${topicName}" and associated documents removed.` });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete topic", variant: "destructive" });
     },
   });
 
@@ -182,7 +213,12 @@ export default function ResearchAssistant() {
               </div>
             )}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Research Topics</label>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">Research Topics</label>
+                <Button variant="ghost" size="sm" onClick={() => setTopicManagerOpen(true)} className="gap-1.5 h-7 text-xs text-muted-foreground hover:text-foreground">
+                  <Settings className="h-3.5 w-3.5" />Manage Topics
+                </Button>
+              </div>
               <TopicCombobox topics={allTopics} selected={uploadTopics} onChange={setUploadTopics} placeholder="Select or create topics…" />
             </div>
             <Button onClick={handleUpload} disabled={!uploadFile || uploadTopics.length === 0 || uploading} className="w-full gap-2">
@@ -200,6 +236,7 @@ export default function ResearchAssistant() {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Document</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Topics</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground w-48">Progress</th>
+                    <th className="w-10"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -229,6 +266,32 @@ export default function ResearchAssistant() {
                             </p>
                           )}
                         </div>
+                      </td>
+                      <td className="px-2 py-3">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{doc.name}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => deleteDocMutation.mutate(doc.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </td>
                     </tr>
                   ))}
@@ -331,6 +394,49 @@ export default function ResearchAssistant() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Topic Manager Dialog */}
+      <Dialog open={topicManagerOpen} onOpenChange={setTopicManagerOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage Research Topics</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1 max-h-64 overflow-y-auto">
+            {topics.length === 0 && (
+              <p className="text-sm text-muted-foreground py-4 text-center">No topics yet.</p>
+            )}
+            {topics.map((topic) => (
+              <div key={topic} className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-secondary/50 transition-colors">
+                <span className="text-sm text-foreground">{topic}</span>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Topic</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Deleting "{topic}" will also remove <strong>all documents</strong> associated with this topic. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteTopicMutation.mutate(topic)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete Topic
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
