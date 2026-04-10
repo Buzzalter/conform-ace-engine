@@ -73,7 +73,7 @@ function CitationRenderer({
         }
         // Render normal markdown
         return (
-          <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown key={i} remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
             {part}
           </ReactMarkdown>
         );
