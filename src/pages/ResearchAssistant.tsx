@@ -123,8 +123,9 @@ export default function ResearchAssistant() {
       qc.invalidateQueries({ queryKey: ["researchDocs"] });
       toast({ title: "Document deleted" });
     },
-    onError: () => {
-      toast({ title: "Failed to delete document", variant: "destructive" });
+    onError: (error: any) => {
+      const errorMsg = error?.message || error?.toString() || "Unknown error";
+      toast({ title: "Failed to delete document", description: errorMsg, variant: "destructive" });
     },
   });
 
@@ -259,7 +260,7 @@ export default function ResearchAssistant() {
                           {doc.status === "completed" ? (
                             <p className="text-[11px] text-muted-foreground font-mono">✅ Completed</p>
                           ) : doc.status === "failed" ? (
-                            <p className="text-[11px] text-destructive font-mono truncate">❌ {doc.message || "Failed"}</p>
+                            <p className="text-[11px] text-destructive font-mono">❌ Error while processing</p>
                           ) : (
                             <p className="text-[11px] text-muted-foreground font-mono truncate">
                               {doc.message || "Processing…"}
@@ -267,32 +268,38 @@ export default function ResearchAssistant() {
                           )}
                         </div>
                       </td>
-                      <td className="px-2 py-3">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete "{doc.name}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => deleteDocMutation.mutate(doc.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </td>
+                       <td className="px-2 py-3">
+                         <AlertDialog>
+                           <AlertDialogTrigger asChild>
+                             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0">
+                               <Trash2 className="h-3.5 w-3.5" />
+                             </Button>
+                           </AlertDialogTrigger>
+                           <AlertDialogContent>
+                             <AlertDialogHeader>
+                               <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                               <AlertDialogDescription>
+                                 Are you sure you want to delete "{doc.name}"? This action cannot be undone.
+                                 {doc.status === "failed" && doc.message && (
+                                   <div className="mt-3 p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                                     <p className="text-xs font-semibold text-destructive mb-1">Error details:</p>
+                                     <p className="text-xs text-destructive/90 font-mono break-words">{doc.message}</p>
+                                   </div>
+                                 )}
+                               </AlertDialogDescription>
+                             </AlertDialogHeader>
+                             <AlertDialogFooter>
+                               <AlertDialogCancel>Cancel</AlertDialogCancel>
+                               <AlertDialogAction
+                                 onClick={() => deleteDocMutation.mutate(doc.id)}
+                                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                               >
+                                 Delete
+                               </AlertDialogAction>
+                             </AlertDialogFooter>
+                           </AlertDialogContent>
+                         </AlertDialog>
+                       </td>
                     </tr>
                   ))}
                 </tbody>
