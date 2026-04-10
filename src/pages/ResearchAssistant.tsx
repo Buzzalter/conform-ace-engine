@@ -278,15 +278,17 @@ export default function ResearchAssistant() {
                            <AlertDialogContent>
                              <AlertDialogHeader>
                                <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                               <AlertDialogDescription>
-                                 Are you sure you want to delete "{doc.name}"? This action cannot be undone.
-                                 {doc.status === "failed" && doc.message && (
-                                   <div className="mt-3 p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                                     <p className="text-xs font-semibold text-destructive mb-1">Error details:</p>
-                                     <p className="text-xs text-destructive/90 font-mono break-words">{doc.message}</p>
-                                   </div>
-                                 )}
-                               </AlertDialogDescription>
+                                <AlertDialogDescription asChild>
+                                  <div className="text-sm text-muted-foreground">
+                                    Are you sure you want to delete "{doc.name}"? This action cannot be undone.
+                                    {doc.status === "failed" && doc.message && (
+                                      <div className="mt-3 p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                                        <span className="text-xs font-semibold text-destructive block mb-1">Error details:</span>
+                                        <span className="text-xs text-destructive/90 font-mono break-words block">{doc.message}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </AlertDialogDescription>
                              </AlertDialogHeader>
                              <AlertDialogFooter>
                                <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -424,8 +426,10 @@ export default function ResearchAssistant() {
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>Delete Topic</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Deleting "{topic}" will also remove <strong>all documents</strong> associated with this topic. This cannot be undone.
+                      <AlertDialogDescription asChild>
+                        <div className="text-sm text-muted-foreground">
+                          Deleting "{topic}" will also remove <strong>all documents</strong> associated with this topic. This cannot be undone.
+                        </div>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
