@@ -123,8 +123,9 @@ export default function ResearchAssistant() {
       qc.invalidateQueries({ queryKey: ["researchDocs"] });
       toast({ title: "Document deleted" });
     },
-    onError: () => {
-      toast({ title: "Failed to delete document", variant: "destructive" });
+    onError: (error: any) => {
+      const errorMsg = error?.message || error?.toString() || "Unknown error";
+      toast({ title: "Failed to delete document", description: errorMsg, variant: "destructive" });
     },
   });
 
@@ -259,7 +260,7 @@ export default function ResearchAssistant() {
                           {doc.status === "completed" ? (
                             <p className="text-[11px] text-muted-foreground font-mono">✅ Completed</p>
                           ) : doc.status === "failed" ? (
-                            <p className="text-[11px] text-destructive font-mono truncate">❌ {doc.message || "Failed"}</p>
+                            <p className="text-[11px] text-destructive font-mono">❌ Error while processing</p>
                           ) : (
                             <p className="text-[11px] text-muted-foreground font-mono truncate">
                               {doc.message || "Processing…"}
