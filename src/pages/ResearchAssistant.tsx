@@ -106,7 +106,7 @@ export default function ResearchAssistant() {
     queryFn: fetchResearchDocuments,
     refetchInterval: (query) => {
       const data = query.state.data;
-      if (data && data.some((d) => d.status === "processing")) return 3000;
+      if (data && data.some((d) => d.status === "processing")) return 2000;
       return false;
     },
   });
@@ -214,11 +214,35 @@ export default function ResearchAssistant() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="space-y-1">
-                          <Progress value={doc.progress} className="h-2" />
-                          <p className="text-[11px] text-muted-foreground font-mono truncate">
-                            {doc.status === "completed" ? "Done" : doc.status === "failed" ? "Failed" : doc.message || `${doc.progress}%`}
-                          </p>
+                        <div className="space-y-1.5">
+                          <Progress
+                            value={doc.progress}
+                            className={`h-2 ${
+                              doc.status === "completed"
+                                ? "[&>div]:bg-emerald-500"
+                                : doc.status === "failed"
+                                ? "[&>div]:bg-destructive"
+                                : "[&>div]:bg-primary"
+                            }`}
+                          />
+                          {doc.status === "completed" ? (
+                            <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30 text-[10px]">
+                              ✅ Completed
+                            </Badge>
+                          ) : doc.status === "failed" ? (
+                            <div className="space-y-0.5">
+                              <Badge variant="secondary" className="bg-destructive/15 text-destructive border-destructive/30 text-[10px]">
+                                ❌ Failed
+                              </Badge>
+                              {doc.message && (
+                                <p className="text-[10px] text-destructive/80 font-mono truncate">{doc.message}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-[10px] text-muted-foreground font-mono truncate animate-pulse">
+                              {doc.message || `Processing… ${doc.progress}%`}
+                            </p>
+                          )}
                         </div>
                       </td>
                     </tr>
