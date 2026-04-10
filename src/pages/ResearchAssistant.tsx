@@ -37,7 +37,7 @@ interface ChatMessage {
   citations?: Citation[];
 }
 
-// Parse <cite id="X"/> tags in markdown and render as clickable badges
+// Parse [c.f "DocumentName.pdf"] tags in markdown and render as clickable badges
 function CitationRenderer({
   content,
   citations,
@@ -47,25 +47,24 @@ function CitationRenderer({
   citations: Citation[];
   onCiteClick: (c: Citation) => void;
 }) {
-  const parts = content.split(/(<cite\s+id="[^"]*"\s*\/>)/g);
+  const parts = content.split(/(\[c\.f\s+"[^"]*"\])/g);
 
   return (
     <div className="prose prose-invert prose-sm max-w-none">
       {parts.map((part, i) => {
-        const match = part.match(/<cite\s+id="([^"]*)"\s*\/>/);
+        const match = part.match(/\[c\.f\s+"([^"]*)"\]/);
         if (match) {
-          const citeId = match[1];
-          const citation = citations.find((c) => c.cite_id === citeId);
-          const idx = citations.findIndex((c) => c.cite_id === citeId);
+          const docName = match[1];
+          const citation = citations.find((c) => c.doc_name === docName);
           if (citation) {
             return (
               <Tooltip key={i}>
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => onCiteClick(citation)}
-                    className="inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded bg-primary/20 text-primary text-[11px] font-bold hover:bg-primary/30 transition-colors mx-0.5 align-baseline"
+                    className="inline-flex items-center justify-center h-5 px-1.5 rounded bg-primary/20 text-primary text-[11px] font-bold hover:bg-primary/30 transition-colors mx-0.5 align-baseline"
                   >
-                    {idx + 1}
+                    {docName}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
@@ -75,7 +74,7 @@ function CitationRenderer({
               </Tooltip>
             );
           }
-          return <span key={i} className="text-muted-foreground text-xs">[?]</span>;
+          return <span key={i} className="text-muted-foreground text-xs">[{docName}]</span>;
         }
         return (
           <ReactMarkdown key={i} remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
