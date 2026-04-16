@@ -226,11 +226,11 @@ export default function RedactionEngine() {
                           <p className="text-xs text-muted-foreground">{doc.message || "Processing…"}</p>
                         </div>
                       ) : doc.status === "awaiting_review" ? (
-                        <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">
+                        <Badge variant="outline" className="border-primary/40 text-primary">
                           Awaiting Review
                         </Badge>
                       ) : doc.status === "completed" ? (
-                        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                        <Badge variant="outline" className="border-accent text-accent-foreground">
                           <CheckCircle2 className="h-3 w-3 mr-1" /> Completed
                         </Badge>
                       ) : (
