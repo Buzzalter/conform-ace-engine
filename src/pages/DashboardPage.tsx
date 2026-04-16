@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Shield, BookOpen, ArrowRight } from "lucide-react";
+import { Shield, BookOpen, ShieldAlert, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const features = [
@@ -22,6 +22,16 @@ const features = [
     gradient: "from-success/20 to-success/5",
     borderColor: "border-success/30",
     iconColor: "text-success",
+  },
+  {
+    title: "OSINT Redaction Engine",
+    description:
+      "Upload sensitive documents, run automated entity detection with OSINT intelligence, and produce redacted PDFs.",
+    icon: ShieldAlert,
+    route: "/redaction",
+    gradient: "from-destructive/20 to-destructive/5",
+    borderColor: "border-destructive/30",
+    iconColor: "text-destructive",
   },
 ];
 
