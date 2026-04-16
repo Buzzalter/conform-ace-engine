@@ -154,9 +154,9 @@ export default function RedactionEngine() {
         </h2>
 
         <FileDropzone
-          accept={{ "application/pdf": [".pdf"] }}
-          onDrop={(files) => setFile(files[0] ?? null)}
+          onFileDrop={(f) => setFile(f)}
           label={file ? file.name : "Drop a PDF here or click to select"}
+          sublabel="Accepts PDF files"
         />
 
         <div className="space-y-1.5">
