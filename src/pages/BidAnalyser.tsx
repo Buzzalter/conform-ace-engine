@@ -1,0 +1,513 @@
+import { useState, useCallback, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Gavel,
+  FileText,
+  Trash2,
+  Eye,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  Trophy,
+  DollarSign,
+  Sparkles,
+  AlertTriangle,
+  RotateCcw,
+  Play,
+} from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { FileDropzone } from "@/components/FileDropzone";
+import {
+  uploadRFQ,
+  getRFQs,
+  deleteRFQ,
+  uploadBid,
+  getBids,
+  deleteBid,
+  runEvaluation,
+  type RFQDocument,
+  type BidDocument,
+  type EvaluationResult,
+} from "@/lib/api";
+
+export default function BidAnalyser() {
+  const qc = useQueryClient();
+  const [viewRFQ, setViewRFQ] = useState<RFQDocument | null>(null);
+  const [selectedRFQId, setSelectedRFQId] = useState<string>("");
+  const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
+
+  // ── RFQ Queries ──
+  const { data: rfqs = [], isLoading: rfqsLoading } = useQuery({
+    queryKey: ["bid-rfqs"],
+    queryFn: getRFQs,
+    refetchInterval: (q) =>
+      q.state.data?.some((r) => r.status === "processing") ? 2000 : false,
+  });
+
+  const uploadRFQMutation = useMutation({
+    mutationFn: (file: File) => uploadRFQ(file),
+    onSuccess: () => {
+      toast({ title: "RFQ uploaded", description: "Processing started." });
+      qc.invalidateQueries({ queryKey: ["bid-rfqs"] });
+    },
+    onError: () => toast({ title: "Upload failed", variant: "destructive" }),
+  });
+
+  const deleteRFQMutation = useMutation({
+    mutationFn: (id: string) => deleteRFQ(id),
+    onSuccess: () => {
+      toast({ title: "RFQ deleted" });
+      qc.invalidateQueries({ queryKey: ["bid-rfqs"] });
+    },
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
+  });
+
+  // ── Bid Queries ──
+  const { data: bids = [], isLoading: bidsLoading } = useQuery({
+    queryKey: ["bid-bids", selectedRFQId],
+    queryFn: () => getBids(selectedRFQId),
+    enabled: !!selectedRFQId,
+    refetchInterval: (q) =>
+      q.state.data?.some((b) => b.status === "processing") ? 2000 : false,
+  });
+
+  const uploadBidMutation = useMutation({
+    mutationFn: (file: File) => uploadBid(selectedRFQId, file),
+    onSuccess: () => {
+      toast({ title: "Bid uploaded" });
+      qc.invalidateQueries({ queryKey: ["bid-bids", selectedRFQId] });
+    },
+    onError: () => toast({ title: "Bid upload failed", variant: "destructive" }),
+  });
+
+  const deleteBidMutation = useMutation({
+    mutationFn: (id: string) => deleteBid(id),
+    onSuccess: () => {
+      toast({ title: "Bid removed" });
+      qc.invalidateQueries({ queryKey: ["bid-bids", selectedRFQId] });
+    },
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
+  });
+
+  const evaluateMutation = useMutation({
+    mutationFn: () => runEvaluation(selectedRFQId),
+    onSuccess: (data) => {
+      setEvaluation(data.evaluation);
+      toast({ title: "Analysis complete" });
+    },
+    onError: () => toast({ title: "Analysis failed", variant: "destructive" }),
+  });
+
+  const completedRFQs = useMemo(
+    () => rfqs.filter((r) => r.status === "completed"),
+    [rfqs]
+  );
+
+  const allBidsReady = useMemo(
+    () => bids.length > 0 && bids.every((b) => b.status === "completed"),
+    [bids]
+  );
+
+  const handleClearResults = useCallback(() => {
+    setEvaluation(null);
+  }, []);
+
+  return (
+    <div className="flex-1 flex flex-col p-6 gap-6 overflow-auto">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Gavel className="h-7 w-7 text-primary" />
+        <div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Bid Analyser</h1>
+          <p className="text-sm text-muted-foreground">
+            AI-powered vendor evaluation and source selection
+          </p>
+        </div>
+      </div>
+
+      <Tabs defaultValue="rfqs" className="flex-1 flex flex-col">
+        <TabsList className="self-start">
+          <TabsTrigger value="rfqs">1. Problem Statements (RFQs)</TabsTrigger>
+          <TabsTrigger value="bids" disabled={completedRFQs.length === 0}>
+            2. Bid Evaluation
+          </TabsTrigger>
+        </TabsList>
+
+        {/* ── Tab 1: RFQs ── */}
+        <TabsContent value="rfqs" className="space-y-6 mt-4">
+          <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Upload Problem Statement / RFQ
+            </h2>
+            <FileDropzone
+              onFileDrop={(f) => uploadRFQMutation.mutate(f)}
+              label={uploadRFQMutation.isPending ? "Uploading…" : "Drop RFQ PDF here or click to browse"}
+              sublabel="Accepts PDF files"
+              disabled={uploadRFQMutation.isPending}
+            />
+          </section>
+
+          <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">Uploaded RFQs</h2>
+            {rfqsLoading ? (
+              <div className="flex items-center justify-center py-10 text-muted-foreground gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+              </div>
+            ) : rfqs.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">
+                No RFQs uploaded yet.
+              </p>
+            ) : (
+              <div className="rounded-md border border-border overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Filename</TableHead>
+                      <TableHead>Status / Progress</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rfqs.map((rfq) => (
+                      <TableRow key={rfq.id}>
+                        <TableCell className="font-medium">{rfq.name}</TableCell>
+                        <TableCell>
+                          {rfq.status === "processing" ? (
+                            <div className="space-y-1 max-w-xs">
+                              <Progress value={rfq.progress} className="h-2" />
+                              <p className="text-xs text-muted-foreground">
+                                {rfq.message || "Processing…"}
+                              </p>
+                            </div>
+                          ) : rfq.status === "completed" ? (
+                            <Badge variant="outline" className="border-primary/40 text-primary">
+                              <CheckCircle2 className="h-3 w-3 mr-1" /> Ready
+                            </Badge>
+                          ) : (
+                            <Badge variant="destructive">
+                              <XCircle className="h-3 w-3 mr-1" /> Failed
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {rfq.status === "completed" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5"
+                                onClick={() => setViewRFQ(rfq)}
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                View Understanding
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="gap-1.5 text-muted-foreground hover:text-destructive"
+                              onClick={() => deleteRFQMutation.mutate(rfq.id)}
+                              disabled={deleteRFQMutation.isPending}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Delete
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </section>
+        </TabsContent>
+
+        {/* ── Tab 2: Bid Evaluation ── */}
+        <TabsContent value="bids" className="space-y-6 mt-4">
+          <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">Select RFQ</h2>
+            <Select value={selectedRFQId} onValueChange={setSelectedRFQId}>
+              <SelectTrigger className="max-w-md">
+                <SelectValue placeholder="Choose a completed RFQ…" />
+              </SelectTrigger>
+              <SelectContent>
+                {completedRFQs.map((rfq) => (
+                  <SelectItem key={rfq.id} value={rfq.id}>
+                    {rfq.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </section>
+
+          {selectedRFQId && (
+            <>
+              <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  Upload Bids
+                </h2>
+                <FileDropzone
+                  onFileDrop={(f) => uploadBidMutation.mutate(f)}
+                  label={uploadBidMutation.isPending ? "Uploading…" : "Drop bid PDFs here or click to browse"}
+                  sublabel="Upload one or more bid documents"
+                  disabled={uploadBidMutation.isPending}
+                />
+              </section>
+
+              <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+                <h2 className="text-lg font-semibold text-foreground">Uploaded Bids</h2>
+                {bidsLoading ? (
+                  <div className="flex items-center justify-center py-10 text-muted-foreground gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+                  </div>
+                ) : bids.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-6 text-center">
+                    No bids uploaded for this RFQ yet.
+                  </p>
+                ) : (
+                  <div className="rounded-md border border-border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Filename</TableHead>
+                          <TableHead>Status / Progress</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {bids.map((bid: BidDocument) => (
+                          <TableRow key={bid.id}>
+                            <TableCell className="font-medium">{bid.name}</TableCell>
+                            <TableCell>
+                              {bid.status === "processing" ? (
+                                <div className="space-y-1 max-w-xs">
+                                  <Progress value={bid.progress} className="h-2" />
+                                  <p className="text-xs text-muted-foreground">
+                                    {bid.message || "Processing…"}
+                                  </p>
+                                </div>
+                              ) : bid.status === "completed" ? (
+                                <Badge variant="outline" className="border-primary/40 text-primary">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Ready
+                                </Badge>
+                              ) : (
+                                <Badge variant="destructive">
+                                  <XCircle className="h-3 w-3 mr-1" /> Failed
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="gap-1.5 text-muted-foreground hover:text-destructive"
+                                onClick={() => deleteBidMutation.mutate(bid.id)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Remove
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 pt-2">
+                  <Button
+                    onClick={() => evaluateMutation.mutate()}
+                    disabled={!allBidsReady || evaluateMutation.isPending}
+                    className="gap-2"
+                  >
+                    {evaluateMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
+                    Run Analysis &amp; Rank Bids
+                  </Button>
+                  {evaluation && (
+                    <Button variant="outline" onClick={handleClearResults} className="gap-2">
+                      <RotateCcw className="h-4 w-4" />
+                      Start Again / Clear Results
+                    </Button>
+                  )}
+                </div>
+              </section>
+
+              {/* ── Results ── */}
+              {evaluation && (
+                <section className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="border-primary/40 bg-gradient-to-br from-primary/10 to-primary/5">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Trophy className="h-5 w-5 text-primary" />
+                          Best Technical Solution
+                        </CardTitle>
+                        <CardDescription className="text-foreground font-semibold pt-1">
+                          {evaluation.best_technical?.bid_name || "—"}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {evaluation.best_technical?.reasoning || "No reasoning available."}
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-success/40 bg-gradient-to-br from-success/10 to-success/5">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <DollarSign className="h-5 w-5 text-success" />
+                          Best Value for Money
+                        </CardTitle>
+                        <CardDescription className="text-foreground font-semibold pt-1">
+                          {evaluation.best_value?.bid_name || "—"}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {evaluation.best_value?.reasoning || "No reasoning available."}
+                        </p>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="border-accent/60 bg-gradient-to-br from-accent/20 to-accent/5">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                          <Sparkles className="h-5 w-5 text-accent-foreground" />
+                          Overall Recommendation
+                        </CardTitle>
+                        <CardDescription className="text-foreground font-semibold pt-1">
+                          {evaluation.overall_recommendation?.bid_name || "—"}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                          {evaluation.overall_recommendation?.reasoning || "No reasoning available."}
+                        </p>
+                        {evaluation.overall_recommendation?.risk_warnings &&
+                          evaluation.overall_recommendation.risk_warnings.length > 0 && (
+                            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2.5 space-y-1">
+                              <p className="text-xs font-semibold text-destructive flex items-center gap-1.5">
+                                <AlertTriangle className="h-3.5 w-3.5" />
+                                Risk Warnings
+                              </p>
+                              <ul className="text-xs text-destructive/90 space-y-0.5 pl-4 list-disc">
+                                {evaluation.overall_recommendation.risk_warnings.map((w, i) => (
+                                  <li key={i}>{w}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {evaluation.ranking && evaluation.ranking.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Ranked Bids</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {evaluation.ranking.map((r) => (
+                          <div
+                            key={r.rank}
+                            className="flex items-start gap-3 rounded-md border border-border bg-secondary/30 p-3"
+                          >
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary font-bold text-sm">
+                              {r.rank}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-foreground">{r.bid_name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                                {r.summary}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+                </section>
+              )}
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* ── RFQ Understanding Dialog ── */}
+      <Dialog open={!!viewRFQ} onOpenChange={(o) => !o && setViewRFQ(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              AI Understanding — {viewRFQ?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Extracted rubric the AI will use to evaluate vendor bids.
+            </DialogDescription>
+          </DialogHeader>
+          {viewRFQ?.understanding ? (
+            <div className="space-y-4 mt-2">
+              {Object.entries(viewRFQ.understanding).map(([key, value]) => (
+                <div key={key} className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {key.replace(/_/g, " ")}
+                  </p>
+                  {Array.isArray(value) ? (
+                    <ul className="text-sm text-foreground space-y-1 pl-4 list-disc">
+                      {value.map((v, i) => (
+                        <li key={i}>{String(v)}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                      {typeof value === "object"
+                        ? JSON.stringify(value, null, 2)
+                        : String(value ?? "—")}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">No understanding data available.</p>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

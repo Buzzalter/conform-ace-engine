@@ -1,4 +1,4 @@
-import { Home, Shield, BookOpen, ShieldAlert } from "lucide-react";
+import { Home, Shield, BookOpen, ShieldAlert, Gavel } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -17,6 +17,7 @@ const items = [
   { title: "Conformance Engine", url: "/conformance", icon: Shield },
   { title: "Research Assistant", url: "/research", icon: BookOpen },
   { title: "OSINT Redaction", url: "/redaction", icon: ShieldAlert },
+  { title: "Bid Analyser", url: "/bid-analyser", icon: Gavel },
 ];
 
 export function AppSidebar() {

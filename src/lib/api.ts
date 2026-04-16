@@ -165,3 +165,82 @@ export async function redownloadRedaction(docId: string): Promise<Blob> {
   if (!res.ok) throw new Error("Failed to download redacted document");
   return res.blob();
 }
+
+// ── Bid Analyser ──
+
+export interface RFQDocument {
+  id: string;
+  name: string;
+  status: "processing" | "completed" | "failed";
+  progress: number;
+  message?: string;
+  understanding?: {
+    domain?: string;
+    problem_statement?: string;
+    technical_requirements?: string[] | string;
+    budget?: string;
+    timeline?: string;
+    [k: string]: unknown;
+  };
+}
+
+export interface BidDocument {
+  id: string;
+  rfq_id: string;
+  name: string;
+  status: "processing" | "completed" | "failed";
+  progress: number;
+  message?: string;
+}
+
+export interface EvaluationResult {
+  best_technical?: { bid_name: string; reasoning: string };
+  best_value?: { bid_name: string; reasoning: string };
+  overall_recommendation?: { bid_name: string; reasoning: string; risk_warnings?: string[] };
+  ranking?: Array<{ rank: number; bid_name: string; summary: string }>;
+  [k: string]: unknown;
+}
+
+export async function uploadRFQ(file: File): Promise<{ id: string; status: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${BASE}/api/bid/rfq/upload`, { method: "POST", body: form });
+  if (!res.ok) throw new Error("Failed to upload RFQ");
+  return res.json();
+}
+
+export async function getRFQs(): Promise<RFQDocument[]> {
+  const res = await fetch(`${BASE}/api/bid/rfq`);
+  if (!res.ok) throw new Error("Failed to fetch RFQs");
+  return res.json();
+}
+
+export async function deleteRFQ(rfqId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/bid/rfq/${rfqId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete RFQ");
+}
+
+export async function uploadBid(rfqId: string, file: File): Promise<{ id: string; status: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${BASE}/api/bid/rfq/${rfqId}/bids/upload`, { method: "POST", body: form });
+  if (!res.ok) throw new Error("Failed to upload bid");
+  return res.json();
+}
+
+export async function getBids(rfqId: string): Promise<BidDocument[]> {
+  const res = await fetch(`${BASE}/api/bid/rfq/${rfqId}/bids`);
+  if (!res.ok) throw new Error("Failed to fetch bids");
+  return res.json();
+}
+
+export async function deleteBid(bidId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/bid/bids/${bidId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete bid");
+}
+
+export async function runEvaluation(rfqId: string): Promise<{ status: string; evaluation: EvaluationResult }> {
+  const res = await fetch(`${BASE}/api/bid/rfq/${rfqId}/evaluate`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to run evaluation");
+  return res.json();
+}
