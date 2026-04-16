@@ -110,3 +110,47 @@ export async function simulateImpact(bankName: string, proposedChange: string): 
   const data = await res.json();
   return data.impacts;
 }
+
+// ── Redaction Engine ──
+
+export interface RedactionEntity {
+  entity: string;
+  reason: string;
+}
+
+export interface RedactionAnalysis {
+  required: RedactionEntity[];
+  suggested: RedactionEntity[];
+}
+
+export interface RedactionDocument {
+  id: string;
+  name: string;
+  status: "processing" | "awaiting_review" | "completed" | "failed";
+  progress: number;
+  message?: string;
+  analysis?: RedactionAnalysis;
+}
+
+export async function fetchRedactionDocuments(): Promise<RedactionDocument[]> {
+  const res = await fetch(`${BASE}/api/redaction/documents`);
+  if (!res.ok) throw new Error("Failed to fetch redaction documents");
+  return res.json();
+}
+
+export async function analyzeRedactionDocument(file: File, manualCriteria: string): Promise<RedactionDocument> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("manual_criteria", manualCriteria);
+  const res = await fetch(`${BASE}/api/redaction/analyze`, { method: "POST", body: form });
+  if (!res.ok) throw new Error("Failed to analyze document");
+  return res.json();
+}
+
+export async function executeRedaction(docId: string, approvedEntities: string[]): Promise<Blob> {
+  const form = new FormData();
+  form.append("approved_entities", JSON.stringify(approvedEntities));
+  const res = await fetch(`${BASE}/api/redaction/execute/${docId}`, { method: "POST", body: form });
+  if (!res.ok) throw new Error("Failed to execute redaction");
+  return res.blob();
+}

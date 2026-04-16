@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import DashboardPage from "@/pages/DashboardPage";
 import ConformanceEngine from "@/pages/ConformanceEngine";
 import ResearchAssistant from "@/pages/ResearchAssistant";
+import RedactionEngine from "@/pages/RedactionEngine";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ function AppLayout() {
               <Route path="/" element={<DashboardPage />} />
               <Route path="/conformance" element={<ConformanceEngine />} />
               <Route path="/research" element={<ResearchAssistant />} />
+              <Route path="/redaction" element={<RedactionEngine />} />
             </Routes>
           </main>
         </div>
