@@ -154,3 +154,14 @@ export async function executeRedaction(docId: string, approvedEntities: string[]
   if (!res.ok) throw new Error("Failed to execute redaction");
   return res.blob();
 }
+
+export async function deleteRedactionDocument(docId: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/redaction/documents/${docId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete redaction document");
+}
+
+export async function redownloadRedaction(docId: string): Promise<Blob> {
+  const res = await fetch(`${BASE}/api/redaction/download/${docId}`);
+  if (!res.ok) throw new Error("Failed to download redacted document");
+  return res.blob();
+}

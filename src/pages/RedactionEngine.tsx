@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +22,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   AlertTriangle,
   Upload,
   ShieldAlert,
@@ -31,6 +37,9 @@ import {
   Eye,
   CheckCircle2,
   XCircle,
+  Download,
+  Trash2,
+  Info,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { FileDropzone } from "@/components/FileDropzone";
@@ -38,6 +47,8 @@ import {
   fetchRedactionDocuments,
   analyzeRedactionDocument,
   executeRedaction,
+  deleteRedactionDocument,
+  redownloadRedaction,
   type RedactionDocument,
   type RedactionEntity,
 } from "@/lib/api";
@@ -78,6 +89,36 @@ export default function RedactionEngine() {
       toast({ title: "Upload failed", description: "Error while processing", variant: "destructive" });
     },
   });
+
+  // ── Delete document ──
+  const deleteMutation = useMutation({
+    mutationFn: (docId: string) => deleteRedactionDocument(docId),
+    onSuccess: () => {
+      toast({ title: "Document removed" });
+      qc.invalidateQueries({ queryKey: ["redaction-documents"] });
+    },
+    onError: () => {
+      toast({ title: "Failed to remove document", variant: "destructive" });
+    },
+  });
+
+  // ── Re-download completed document ──
+  const handleRedownload = useCallback(async (doc: RedactionDocument) => {
+    try {
+      const blob = await redownloadRedaction(doc.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `REDACTED_${doc.name}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast({ title: "Download started" });
+    } catch {
+      toast({ title: "Download failed", variant: "destructive" });
+    }
+  }, []);
 
   // ── Open review modal ──
   const openReview = useCallback((doc: RedactionDocument) => {
@@ -122,6 +163,15 @@ export default function RedactionEngine() {
   }, [reviewDoc, checkedRequired, checkedSuggested, qc]);
 
   const hasProcessing = documents.some((d) => d.status === "processing");
+
+  // Helper: get all redacted entities from a completed doc's analysis
+  const getRedactedEntities = (doc: RedactionDocument): string[] => {
+    if (!doc.analysis) return [];
+    return [
+      ...doc.analysis.required.map((e) => e.entity),
+      ...doc.analysis.suggested.map((e) => e.entity),
+    ];
+  };
 
   return (
     <div className="flex-1 flex flex-col p-6 gap-6 overflow-auto">
@@ -206,52 +256,95 @@ export default function RedactionEngine() {
             No documents submitted yet. Upload a PDF above to get started.
           </p>
         ) : (
-          <div className="rounded-md border border-border overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Document Name</TableHead>
-                  <TableHead>Status / Progress</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {documents.map((doc) => (
-                  <TableRow key={doc.id}>
-                    <TableCell className="font-medium">{doc.name}</TableCell>
-                    <TableCell>
-                      {doc.status === "processing" ? (
-                        <div className="space-y-1 max-w-xs">
-                          <Progress value={doc.progress} className="h-2" />
-                          <p className="text-xs text-muted-foreground">{doc.message || "Processing…"}</p>
-                        </div>
-                      ) : doc.status === "awaiting_review" ? (
-                        <Badge variant="outline" className="border-primary/40 text-primary">
-                          Awaiting Review
-                        </Badge>
-                      ) : doc.status === "completed" ? (
-                        <Badge variant="outline" className="border-accent text-accent-foreground">
-                          <CheckCircle2 className="h-3 w-3 mr-1" /> Completed
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive">
-                          <XCircle className="h-3 w-3 mr-1" /> Failed
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {doc.status === "awaiting_review" && (
-                        <Button size="sm" variant="default" className="gap-1.5 font-semibold" onClick={() => openReview(doc)}>
-                          <ShieldAlert className="h-3.5 w-3.5" />
-                          Review &amp; Redact
-                        </Button>
-                      )}
-                    </TableCell>
+          <TooltipProvider>
+            <div className="rounded-md border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Document Name</TableHead>
+                    <TableHead>Status / Progress</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {documents.map((doc) => (
+                    <TableRow key={doc.id}>
+                      <TableCell className="font-medium">{doc.name}</TableCell>
+                      <TableCell>
+                        {doc.status === "processing" ? (
+                          <div className="space-y-1 max-w-xs">
+                            <Progress value={doc.progress} className="h-2" />
+                            <p className="text-xs text-muted-foreground">{doc.message || "Processing…"}</p>
+                          </div>
+                        ) : doc.status === "awaiting_review" ? (
+                          <Badge variant="outline" className="border-primary/40 text-primary">
+                            Awaiting Review
+                          </Badge>
+                        ) : doc.status === "completed" ? (
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="border-accent text-accent-foreground">
+                              <CheckCircle2 className="h-3 w-3 mr-1" /> Completed
+                            </Badge>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button className="text-muted-foreground hover:text-foreground transition-colors">
+                                  <Info className="h-4 w-4" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs">
+                                <p className="font-semibold text-xs mb-1">Redacted Entities:</p>
+                                {getRedactedEntities(doc).length > 0 ? (
+                                  <ul className="text-xs space-y-0.5">
+                                    {getRedactedEntities(doc).map((e, i) => (
+                                      <li key={i} className="text-muted-foreground">• {e}</li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground italic">No entity data available</p>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        ) : (
+                          <Badge variant="destructive">
+                            <XCircle className="h-3 w-3 mr-1" /> Failed
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {doc.status === "awaiting_review" && (
+                            <Button size="sm" variant="default" className="gap-1.5 font-semibold" onClick={() => openReview(doc)}>
+                              <ShieldAlert className="h-3.5 w-3.5" />
+                              Review &amp; Redact
+                            </Button>
+                          )}
+                          {doc.status === "completed" && (
+                            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => handleRedownload(doc)}>
+                              <Download className="h-3.5 w-3.5" />
+                              Download
+                            </Button>
+                          )}
+                          {(doc.status === "completed" || doc.status === "failed") && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="gap-1.5 text-muted-foreground hover:text-destructive"
+                              onClick={() => deleteMutation.mutate(doc.id)}
+                              disabled={deleteMutation.isPending}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Clear
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </TooltipProvider>
         )}
       </section>
 
