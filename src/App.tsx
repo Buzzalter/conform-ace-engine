@@ -8,6 +8,7 @@ import DashboardPage from "@/pages/DashboardPage";
 import ConformanceEngine from "@/pages/ConformanceEngine";
 import ResearchAssistant from "@/pages/ResearchAssistant";
 import RedactionEngine from "@/pages/RedactionEngine";
+import BidAnalyser from "@/pages/BidAnalyser";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ function AppLayout() {
               <Route path="/conformance" element={<ConformanceEngine />} />
               <Route path="/research" element={<ResearchAssistant />} />
               <Route path="/redaction" element={<RedactionEngine />} />
+              <Route path="/bid-analyser" element={<BidAnalyser />} />
             </Routes>
           </main>
         </div>

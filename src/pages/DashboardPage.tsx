@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Shield, BookOpen, ShieldAlert, ArrowRight } from "lucide-react";
+import { Shield, BookOpen, ShieldAlert, Gavel, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const features = [
@@ -32,6 +32,16 @@ const features = [
     gradient: "from-destructive/20 to-destructive/5",
     borderColor: "border-destructive/30",
     iconColor: "text-destructive",
+  },
+  {
+    title: "Bid Analyser",
+    description:
+      "AI-powered vendor evaluation and source selection. Score, rank, and recommend bids against an RFQ.",
+    icon: Gavel,
+    route: "/bid-analyser",
+    gradient: "from-accent/20 to-accent/5",
+    borderColor: "border-accent/40",
+    iconColor: "text-accent-foreground",
   },
 ];
 
