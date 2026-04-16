@@ -39,9 +39,9 @@ const features = [
       "AI-powered vendor evaluation and source selection. Score, rank, and recommend bids against an RFQ.",
     icon: Gavel,
     route: "/bid-analyser",
-    gradient: "from-accent/20 to-accent/5",
-    borderColor: "border-accent/40",
-    iconColor: "text-accent-foreground",
+    gradient: "from-orange-500/20 to-orange-500/5",
+    borderColor: "border-orange-500/40",
+    iconColor: "text-orange-500",
   },
 ];
 
