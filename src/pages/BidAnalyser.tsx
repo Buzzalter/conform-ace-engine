@@ -76,6 +76,10 @@ export default function BidAnalyser() {
   const [selectedRFQId, setSelectedRFQId] = useState<string>("");
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
 
+  // ── Red-Team state ──
+  const [redTeamRFQId, setRedTeamRFQId] = useState<string>("");
+  const [redTeamEvaluation, setRedTeamEvaluation] = useState<DraftEvaluation | null>(null);
+
   // ── RFQ Queries ──
   const { data: rfqs = [], isLoading: rfqsLoading } = useQuery({
     queryKey: ["bid-rfqs"],
