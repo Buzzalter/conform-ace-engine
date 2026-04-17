@@ -390,24 +390,18 @@ export default function ResearchAssistant() {
               </div>
 
               {/* Input */}
-              <div className="border-t border-border p-3 space-y-2">
-                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                  <Globe className="h-3 w-3" />
-                  <span>Answers will be synthesized in <span className="font-medium text-foreground">{language}</span></span>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                    placeholder={chatTopics.length === 0 ? "Select topics first…" : "Ask about your research…"}
-                    disabled={chatTopics.length === 0}
-                    className="flex-1 bg-secondary/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  />
-                  <Button size="icon" onClick={handleSend} disabled={!input.trim() || sending || chatTopics.length === 0}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
+              <div className="border-t border-border p-3 flex gap-2">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                  placeholder={chatTopics.length === 0 ? "Select topics first…" : "Ask about your research…"}
+                  disabled={chatTopics.length === 0}
+                  className="flex-1 bg-secondary/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                />
+                <Button size="icon" onClick={handleSend} disabled={!input.trim() || sending || chatTopics.length === 0}>
+                  <Send className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
