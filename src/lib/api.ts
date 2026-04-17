@@ -209,6 +209,7 @@ export interface EvaluationResult {
     cons?: string[];
     clarification_questions?: string[];
     supplier_feedback?: string;
+    ai_authenticity_warning?: string;
   }>;
   [k: string]: unknown;
 }
