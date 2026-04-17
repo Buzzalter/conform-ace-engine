@@ -279,6 +279,7 @@ export default function BidAnalyser() {
 
           {selectedRFQId && (
             <>
+              {!evaluation && (
               <section className="rounded-xl border border-border bg-card p-5 space-y-4">
                 <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
                   <FileText className="h-5 w-5 text-primary" />
@@ -291,6 +292,7 @@ export default function BidAnalyser() {
                   disabled={uploadBidMutation.isPending}
                 />
               </section>
+              )}
 
               <section className="rounded-xl border border-border bg-card p-5 space-y-4">
                 <h2 className="text-lg font-semibold text-foreground">Uploaded Bids</h2>
