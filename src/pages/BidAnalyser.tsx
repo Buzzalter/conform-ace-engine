@@ -294,6 +294,7 @@ export default function BidAnalyser() {
               </section>
               )}
 
+              {!evaluation && (
               <section className="rounded-xl border border-border bg-card p-5 space-y-4">
                 <h2 className="text-lg font-semibold text-foreground">Uploaded Bids</h2>
                 {bidsLoading ? (
@@ -367,14 +368,18 @@ export default function BidAnalyser() {
                     )}
                     Run Analysis &amp; Rank Bids
                   </Button>
-                  {evaluation && (
-                    <Button variant="outline" onClick={handleClearResults} className="gap-2">
-                      <RotateCcw className="h-4 w-4" />
-                      Start Again / Clear Results
-                    </Button>
-                  )}
                 </div>
               </section>
+              )}
+
+              {evaluation && (
+                <div className="flex items-center gap-3">
+                  <Button variant="outline" onClick={handleClearResults} className="gap-2">
+                    <RotateCcw className="h-4 w-4" />
+                    Start Again / Clear Results
+                  </Button>
+                </div>
+              )}
 
               {/* ── Results ── */}
               {evaluation && (
