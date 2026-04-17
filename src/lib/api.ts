@@ -11,6 +11,12 @@ export interface RulebookDocument {
   priority_level?: number;
 }
 
+export interface ViolationLineage {
+  silver_rule_id?: string;
+  bronze_page_number?: string | number;
+  bronze_raw_quote?: string;
+}
+
 export interface Violation {
   title: string;
   quote: string;
@@ -20,6 +26,7 @@ export interface Violation {
   severity: "critical" | "major" | "minor" | "recommendation";
   summary: string;
   actions: string;
+  lineage?: ViolationLineage;
 }
 
 export interface Impact {
