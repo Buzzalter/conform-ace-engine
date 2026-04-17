@@ -1,7 +1,27 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import type { Violation } from "@/lib/api";
-import { AlertTriangle, BookOpen, CheckCircle2, FileText, Lightbulb } from "lucide-react";
+import {
+  AlertTriangle,
+  BookOpen,
+  CheckCircle2,
+  FileText,
+  Lightbulb,
+  Search,
+  Trophy,
+  Database,
+  HardDrive,
+} from "lucide-react";
 
 const severityConfig: Record<string, { color: string; label: string }> = {
   critical: { color: "bg-destructive/15 text-destructive border-destructive/30", label: "Critical" },
@@ -17,6 +37,8 @@ interface ViolationCardProps {
 
 export function ViolationCard({ violation, index }: ViolationCardProps) {
   const severity = severityConfig[violation.severity] ?? severityConfig.minor;
+  const [lineageOpen, setLineageOpen] = useState(false);
+  const lineage = violation.lineage;
 
   return (
     <motion.div
@@ -80,6 +102,132 @@ export function ViolationCard({ violation, index }: ViolationCardProps) {
           </p>
           <p className="text-sm text-foreground/80 leading-relaxed">{violation.actions}</p>
         </div>
+
+        {/* Trace Lineage */}
+        {lineage && (
+          <div className="pt-2 border-t border-border/60">
+            <Dialog open={lineageOpen} onOpenChange={setLineageOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/60 gap-1.5"
+                >
+                  <Search className="h-3.5 w-3.5" />
+                  Trace Lineage
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Search className="h-4 w-4 text-primary" />
+                    Medallion Data Lineage
+                  </DialogTitle>
+                  <DialogDescription>
+                    Trace how the AI formed this conclusion — from raw source text to the final ruling.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-3 mt-2">
+                  {/* GOLD */}
+                  <div className="rounded-lg border border-yellow-500/30 bg-gradient-to-br from-yellow-500/10 to-amber-500/5 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-7 w-7 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                        <Trophy className="h-3.5 w-3.5 text-yellow-500" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-yellow-600 dark:text-yellow-400 font-semibold">
+                          Gold Layer
+                        </p>
+                        <p className="text-xs font-medium text-foreground">AI Conclusion</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 pl-9">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Rule Broken</p>
+                        <p className="text-sm text-foreground leading-relaxed">{violation.rule_broken}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Summary</p>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{violation.summary}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <div className="h-4 w-px bg-border" />
+                  </div>
+
+                  {/* SILVER */}
+                  <div className="rounded-lg border border-slate-400/30 bg-gradient-to-br from-slate-400/10 to-slate-500/5 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-7 w-7 rounded-full bg-slate-400/20 flex items-center justify-center">
+                        <Database className="h-3.5 w-3.5 text-slate-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+                          Silver Layer
+                        </p>
+                        <p className="text-xs font-medium text-foreground">Knowledge Graph</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 pl-9">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                          Silver Rule ID
+                        </p>
+                        <code className="text-xs font-mono text-foreground bg-muted/60 px-2 py-0.5 rounded inline-block">
+                          {lineage.silver_rule_id ?? "—"}
+                        </code>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">
+                          Source Document
+                        </p>
+                        <p className="text-sm text-foreground">{violation.source_document}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center">
+                    <div className="h-4 w-px bg-border" />
+                  </div>
+
+                  {/* BRONZE */}
+                  <div className="rounded-lg border border-orange-700/30 bg-gradient-to-br from-orange-700/10 to-amber-700/5 p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="h-7 w-7 rounded-full bg-orange-700/20 flex items-center justify-center">
+                        <HardDrive className="h-3.5 w-3.5 text-orange-600 dark:text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-orange-600 dark:text-orange-500 font-semibold">
+                          Bronze Layer
+                        </p>
+                        <p className="text-xs font-medium text-foreground">Raw Source Data</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 pl-9">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Page Number</p>
+                        <Badge variant="outline" className="bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 text-xs font-semibold">
+                          Page {lineage.bronze_page_number ?? "—"}
+                        </Badge>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
+                          Raw OCR Quote
+                        </p>
+                        <pre className="text-xs font-mono text-muted-foreground bg-muted/40 border border-border rounded-md p-3 whitespace-pre-wrap break-words max-h-64 overflow-auto leading-relaxed">
+{lineage.bronze_raw_quote ?? "No raw text available."}
+                        </pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
       </div>
     </motion.div>
   );
