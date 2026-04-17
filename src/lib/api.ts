@@ -197,7 +197,13 @@ export interface EvaluationResult {
   best_technical?: { bid_name: string; reasoning: string };
   best_value?: { bid_name: string; reasoning: string };
   overall_recommendation?: { bid_name: string; reasoning: string; risk_warnings?: string[] };
-  ranking?: Array<{ rank: number; bid_name: string; summary: string }>;
+  ranking?: Array<{
+    rank: number;
+    bid_name: string;
+    summary: string;
+    clarification_questions?: string[];
+    supplier_feedback?: string;
+  }>;
   [k: string]: unknown;
 }
 
