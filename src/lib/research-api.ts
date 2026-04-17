@@ -43,10 +43,11 @@ export async function uploadResearchDocument(file: File, activeTopics: string[])
   return res.json();
 }
 
-export async function researchChat(query: string, activeTopics: string[]): Promise<ChatResponse> {
+export async function researchChat(query: string, activeTopics: string[], userLanguage: string = "English"): Promise<ChatResponse> {
   const form = new FormData();
   form.append("query", query);
   form.append("active_topics", JSON.stringify(activeTopics));
+  form.append("user_language", userLanguage);
   const res = await fetch(`${BASE}/api/research/chat`, { method: "POST", body: form });
   if (!res.ok) throw new Error("Failed to get research chat response");
   const json = await res.json();
