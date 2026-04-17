@@ -41,7 +41,15 @@ import {
   AlertTriangle,
   RotateCcw,
   Play,
+  HelpCircle,
+  MessageSquare,
 } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { toast } from "@/hooks/use-toast";
 import { FileDropzone } from "@/components/FileDropzone";
 import {
