@@ -63,10 +63,11 @@ export async function deleteKnowledgeBank(bankName: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete Knowledge Bank");
 }
 
-export async function checkSubmission(file: File, active_domains: string[]): Promise<{ job_id: string; status: string }> {
+export async function checkSubmission(file: File, active_domains: string[], userLanguage: string = "English"): Promise<{ job_id: string; status: string }> {
   const form = new FormData();
   form.append("file", file);
   form.append("active_domains", JSON.stringify(active_domains));
+  form.append("user_language", userLanguage);
   const res = await fetch(`${BASE}/api/submission/check`, { method: "POST", body: form });
   if (!res.ok) throw new Error("Failed to check submission");
   return res.json();
@@ -78,33 +79,37 @@ export async function fetchAuditJob(jobId: string): Promise<{ status: string; pr
   return res.json();
 }
 
-export async function runIntegrityScan(bankName: string): Promise<string> {
-  const res = await fetch(`${BASE}/api/conformance/banks/${encodeURIComponent(bankName)}/integrity`, { method: "POST" });
+export async function runIntegrityScan(bankName: string, userLanguage: string = "English"): Promise<string> {
+  const url = `${BASE}/api/conformance/banks/${encodeURIComponent(bankName)}/integrity?user_language=${encodeURIComponent(userLanguage)}`;
+  const res = await fetch(url, { method: "POST" });
   if (!res.ok) throw new Error("Failed to run integrity scan");
   const data = await res.json();
   return data.report;
 }
 
-export async function generateConsolidatedRulebook(bankName: string): Promise<string> {
-  const res = await fetch(`${BASE}/api/conformance/banks/${encodeURIComponent(bankName)}/resolve`, { method: "POST" });
+export async function generateConsolidatedRulebook(bankName: string, userLanguage: string = "English"): Promise<string> {
+  const url = `${BASE}/api/conformance/banks/${encodeURIComponent(bankName)}/resolve?user_language=${encodeURIComponent(userLanguage)}`;
+  const res = await fetch(url, { method: "POST" });
   if (!res.ok) throw new Error("Failed to generate rulebook");
   const data = await res.json();
   return data.document;
 }
 
-export async function askChatbot(query: string, active_domains: string[], history: {role: string, content: string}[]): Promise<string> {
+export async function askChatbot(query: string, active_domains: string[], history: {role: string, content: string}[], userLanguage: string = "English"): Promise<string> {
   const form = new FormData();
   form.append("query", query);
   form.append("active_domains", JSON.stringify(active_domains));
   form.append("history", JSON.stringify(history));
+  form.append("user_language", userLanguage);
   const res = await fetch(`${BASE}/api/chat`, { method: "POST", body: form });
   if (!res.ok) throw new Error("Failed to get chatbot response");
   return res.text();
 }
 
-export async function simulateImpact(bankName: string, proposedChange: string): Promise<Impact[]> {
+export async function simulateImpact(bankName: string, proposedChange: string, userLanguage: string = "English"): Promise<Impact[]> {
   const form = new FormData();
   form.append("proposed_change", proposedChange);
+  form.append("user_language", userLanguage);
   const res = await fetch(`${BASE}/api/conformance/banks/${encodeURIComponent(bankName)}/simulate`, { method: "POST", body: form });
   if (!res.ok) throw new Error("Failed to simulate impact");
   const data = await res.json();

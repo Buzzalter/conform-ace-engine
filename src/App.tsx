@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import { LanguageSelector } from "@/components/LanguageSelector";
 import DashboardPage from "@/pages/DashboardPage";
 import ConformanceEngine from "@/pages/ConformanceEngine";
 import ResearchAssistant from "@/pages/ResearchAssistant";
@@ -18,8 +20,9 @@ function AppLayout() {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-12 flex items-center border-b border-border shrink-0">
-            <SidebarTrigger className="ml-3" />
+          <header className="h-12 flex items-center justify-between border-b border-border shrink-0 px-3">
+            <SidebarTrigger />
+            <LanguageSelector />
           </header>
           <main className="flex-1 flex flex-col">
             <Routes>
@@ -39,10 +42,12 @@ function AppLayout() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <BrowserRouter>
-        <Toaster />
-        <AppLayout />
-      </BrowserRouter>
+      <LanguageProvider>
+        <BrowserRouter>
+          <Toaster />
+          <AppLayout />
+        </BrowserRouter>
+      </LanguageProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

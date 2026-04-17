@@ -2,9 +2,10 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2, Bot, User, RotateCcw, MessageSquare, ArrowLeft, AlertTriangle, Database } from "lucide-react";
+import { Send, Loader2, Bot, User, RotateCcw, MessageSquare, ArrowLeft, AlertTriangle, Database, Globe } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { askChatbot } from "@/lib/api";
+import { useLanguage } from "@/contexts/LanguageContext";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -53,6 +54,7 @@ export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
   const [viewingPastSessionId, setViewingPastSessionId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
+  const { language } = useLanguage();
 
   const saveCurrentChat = useCallback(() => {
     if (messages.length === 0) return;
@@ -109,7 +111,7 @@ export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
 
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
-      const response = await askChatbot(query, activeGraphIds, history);
+      const response = await askChatbot(query, activeGraphIds, history, language);
       setMessages((prev) => [...prev, { role: "assistant", content: response }]);
     } catch {
       setMessages((prev) => [
@@ -119,7 +121,7 @@ export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, activeGraphIds, messages]);
+  }, [input, loading, activeGraphIds, messages, language]);
 
   const viewingSession = viewingPastSessionId
     ? savedSessions.find((s) => s.id === viewingPastSessionId)
@@ -301,7 +303,11 @@ export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
 
               {/* Input — hidden in read-only mode */}
               {!viewingSession && (
-                <div className="px-6 py-3 border-t border-border/40">
+                <div className="px-6 py-3 border-t border-border/40 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Globe className="h-3 w-3" />
+                    <span>Responses will be synthesized in <span className="font-medium text-foreground">{language}</span></span>
+                  </div>
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();

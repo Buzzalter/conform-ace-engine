@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FileDropzone } from "@/components/FileDropzone";
 import { TopicCombobox } from "@/components/TopicCombobox";
-import { Upload, Loader2, Send, X, FileText, BookOpen, MessageSquare, Trash2, Settings } from "lucide-react";
+import { Upload, Loader2, Send, X, FileText, BookOpen, MessageSquare, Trash2, Settings, Globe } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   fetchResearchTopics,
   fetchResearchDocuments,
@@ -131,6 +132,7 @@ function processChildren(
 
 export default function ResearchAssistant() {
   const qc = useQueryClient();
+  const { language } = useLanguage();
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadTopics, setUploadTopics] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -211,7 +213,7 @@ export default function ResearchAssistant() {
     setInput("");
     setSending(true);
     try {
-      const res: ChatResponse = await researchChat(userMsg.content, chatTopics);
+      const res: ChatResponse = await researchChat(userMsg.content, chatTopics, language);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: res.answer, citations: res.citations },
@@ -221,7 +223,7 @@ export default function ResearchAssistant() {
     } finally {
       setSending(false);
     }
-  }, [input, chatTopics]);
+  }, [input, chatTopics, language]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -390,18 +392,24 @@ export default function ResearchAssistant() {
               </div>
 
               {/* Input */}
-              <div className="border-t border-border p-3 flex gap-2">
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-                  placeholder={chatTopics.length === 0 ? "Select topics first…" : "Ask about your research…"}
-                  disabled={chatTopics.length === 0}
-                  className="flex-1 bg-secondary/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-                <Button size="icon" onClick={handleSend} disabled={!input.trim() || sending || chatTopics.length === 0}>
-                  <Send className="h-4 w-4" />
-                </Button>
+              <div className="border-t border-border p-3 space-y-2">
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                  <Globe className="h-3 w-3" />
+                  <span>Answers will be synthesized in <span className="font-medium text-foreground">{language}</span></span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                    placeholder={chatTopics.length === 0 ? "Select topics first…" : "Ask about your research…"}
+                    disabled={chatTopics.length === 0}
+                    className="flex-1 bg-secondary/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  <Button size="icon" onClick={handleSend} disabled={!input.trim() || sending || chatTopics.length === 0}>
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 

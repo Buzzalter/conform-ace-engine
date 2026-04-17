@@ -4,7 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, Stethoscope, Wand2, CheckCircle2, Eye, PenLine, Target, Upload } from "lucide-react";
+import { BookOpen, Shield, Loader2, RotateCcw, ChevronDown, AlertCircle, Trash2, Stethoscope, Wand2, CheckCircle2, Eye, PenLine, Target, Upload, Globe } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { UploadModal } from "@/components/UploadModal";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -48,6 +49,7 @@ const markdownComponents = {
 
 export default function ConformanceEngine() {
   const qc = useQueryClient();
+  const { language } = useLanguage();
   const [activeGraphIds, setActiveGraphIds] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [selectedBank, setSelectedBank] = useState("");
@@ -77,7 +79,7 @@ export default function ConformanceEngine() {
     setSimulateLoading(true);
     setSimulateResults(null);
     try {
-      const impacts = await simulateImpact(simulateBank, simulateInput.trim());
+      const impacts = await simulateImpact(simulateBank, simulateInput.trim(), language);
       setSimulateResults(impacts);
     } catch {
       toast({ title: "Simulation failed", description: "Could not calculate blast radius.", variant: "destructive" });
@@ -91,7 +93,7 @@ export default function ConformanceEngine() {
     setIntegrityReport(null);
     setIntegrityLoading(true);
     try {
-      const report = await runIntegrityScan(bankName);
+      const report = await runIntegrityScan(bankName, language);
       setIntegrityReport(report);
     } catch {
       setIntegrityReport("**Error:** Failed to run integrity scan. Please try again.");
@@ -108,7 +110,7 @@ export default function ConformanceEngine() {
     setEditorOpen(true);
     setEditorTab("edit");
     try {
-      const doc = await generateConsolidatedRulebook(bankName);
+      const doc = await generateConsolidatedRulebook(bankName, language);
       setEditorContent(doc);
     } catch {
       setEditorContent("# Error\n\nFailed to generate consolidated rulebook. Please try again.");
@@ -240,7 +242,7 @@ export default function ConformanceEngine() {
       setAuditState("loading");
       setAuditError("");
       try {
-        const { job_id } = await checkSubmission(file, activeGraphIds);
+        const { job_id } = await checkSubmission(file, activeGraphIds, language);
         setAuditJobId(job_id);
         setAuditState("polling");
       } catch {
@@ -248,7 +250,7 @@ export default function ConformanceEngine() {
         setAuditState("idle");
       }
     },
-    [activeGraphIds]
+    [activeGraphIds, language]
   );
 
   const resetAudit = () => {
@@ -275,6 +277,10 @@ export default function ConformanceEngine() {
           <TabsTrigger value="knowledge" className="gap-2"><BookOpen className="h-4 w-4" />Knowledge Bank</TabsTrigger>
           <TabsTrigger value="auditor" className="gap-2"><Shield className="h-4 w-4" />Document Auditor</TabsTrigger>
         </TabsList>
+        <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+          <Globe className="h-3 w-3" />
+          <span>AI output will be synthesized in <span className="font-medium text-foreground">{language}</span>, regardless of source document language.</span>
+        </div>
 
         {/* Tab 1: Knowledge Base */}
         <TabsContent value="knowledge" className="mt-6 space-y-6">
