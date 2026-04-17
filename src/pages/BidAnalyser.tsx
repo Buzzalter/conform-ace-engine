@@ -46,6 +46,8 @@ import {
   Shield,
   Lightbulb,
   Skull,
+  Bot,
+  UserCheck,
 } from "lucide-react";
 import {
   Accordion,
@@ -516,6 +518,39 @@ export default function BidAnalyser() {
                               key={r.rank}
                               className="rounded-lg border border-border bg-secondary/30 p-5 space-y-4"
                             >
+                              {/* AI Authenticity Warning */}
+                              {r.ai_authenticity_warning && (() => {
+                                const w = r.ai_authenticity_warning;
+                                const lower = w.toLowerCase();
+                                const isAI =
+                                  lower.includes("warning") ||
+                                  lower.includes("high probability") ||
+                                  lower.includes("fluff") ||
+                                  lower.includes("ai-generated") ||
+                                  lower.includes("chatgpt");
+                                return isAI ? (
+                                  <div className="flex items-start gap-3 rounded-md border-2 border-destructive bg-destructive/10 px-4 py-3">
+                                    <Bot className="h-5 w-5 shrink-0 text-destructive mt-0.5" />
+                                    <div className="space-y-0.5 min-w-0">
+                                      <p className="text-[11px] font-bold uppercase tracking-wider text-destructive flex items-center gap-1.5">
+                                        <AlertTriangle className="h-3 w-3" />
+                                        AI-Generated Content Detected
+                                      </p>
+                                      <p className="text-sm font-medium text-destructive leading-relaxed">
+                                        {w}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 rounded-md border border-success/40 bg-success/10 px-3 py-2">
+                                    <UserCheck className="h-4 w-4 shrink-0 text-success" />
+                                    <p className="text-xs font-medium text-success leading-relaxed">
+                                      {w}
+                                    </p>
+                                  </div>
+                                );
+                              })()}
+
                               {/* Header */}
                               <div className="flex flex-wrap items-center gap-3">
                                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary font-bold">
