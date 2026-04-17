@@ -200,7 +200,9 @@ export interface EvaluationResult {
   ranking?: Array<{
     rank: number;
     bid_name: string;
-    summary: string;
+    summary?: string;
+    proposed_solution_summary?: string;
+    solution_assessment?: string;
     technical_score_out_of_10?: number;
     value_score_out_of_10?: number;
     pros?: string[];
