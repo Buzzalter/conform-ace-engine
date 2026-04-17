@@ -457,22 +457,65 @@ export default function BidAnalyser() {
                         <CardTitle className="text-base">Ranked Bids</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-2">
-                        {evaluation.ranking.map((r) => (
-                          <div
-                            key={r.rank}
-                            className="flex items-start gap-3 rounded-md border border-border bg-secondary/30 p-3"
-                          >
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary font-bold text-sm">
-                              {r.rank}
+                        {evaluation.ranking.map((r) => {
+                          const hasDebrief =
+                            (r.supplier_feedback && r.supplier_feedback.trim().length > 0) ||
+                            (r.clarification_questions && r.clarification_questions.length > 0);
+                          return (
+                            <div
+                              key={r.rank}
+                              className="flex items-start gap-3 rounded-md border border-border bg-secondary/30 p-3"
+                            >
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary font-bold text-sm">
+                                {r.rank}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-foreground">{r.bid_name}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                                  {r.summary}
+                                </p>
+                                {hasDebrief && (
+                                  <Accordion type="single" collapsible className="mt-2">
+                                    <AccordionItem value="debrief" className="border-b-0">
+                                      <AccordionTrigger className="py-2 text-xs font-medium text-primary hover:no-underline">
+                                        <span className="flex items-center gap-1.5">
+                                          <MessageSquare className="h-3.5 w-3.5" />
+                                          Supplier Debrief &amp; Clarifications
+                                        </span>
+                                      </AccordionTrigger>
+                                      <AccordionContent className="space-y-3 pt-1">
+                                        {r.supplier_feedback && (
+                                          <blockquote className="border-l-2 border-primary/40 pl-3 py-1 text-xs text-muted-foreground italic leading-relaxed">
+                                            {r.supplier_feedback}
+                                          </blockquote>
+                                        )}
+                                        {r.clarification_questions && r.clarification_questions.length > 0 && (
+                                          <div className="space-y-1.5">
+                                            <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                                              <HelpCircle className="h-3.5 w-3.5 text-primary" />
+                                              Clarification Questions
+                                            </p>
+                                            <ul className="space-y-1 pl-1">
+                                              {r.clarification_questions.map((q, i) => (
+                                                <li
+                                                  key={i}
+                                                  className="text-xs text-muted-foreground flex items-start gap-2 leading-relaxed"
+                                                >
+                                                  <HelpCircle className="h-3 w-3 mt-0.5 shrink-0 text-primary/70" />
+                                                  <span>{q}</span>
+                                                </li>
+                                              ))}
+                                            </ul>
+                                          </div>
+                                        )}
+                                      </AccordionContent>
+                                    </AccordionItem>
+                                  </Accordion>
+                                )}
+                              </div>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold text-foreground">{r.bid_name}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                                {r.summary}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </CardContent>
                     </Card>
                   )}
