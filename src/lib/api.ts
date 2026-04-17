@@ -201,6 +201,10 @@ export interface EvaluationResult {
     rank: number;
     bid_name: string;
     summary: string;
+    technical_score_out_of_10?: number;
+    value_score_out_of_10?: number;
+    pros?: string[];
+    cons?: string[];
     clarification_questions?: string[];
     supplier_feedback?: string;
   }>;
