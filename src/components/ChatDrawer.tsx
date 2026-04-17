@@ -303,7 +303,11 @@ export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
 
               {/* Input — hidden in read-only mode */}
               {!viewingSession && (
-                <div className="px-6 py-3 border-t border-border/40">
+                <div className="px-6 py-3 border-t border-border/40 space-y-2">
+                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Globe className="h-3 w-3" />
+                    <span>Responses will be synthesized in <span className="font-medium text-foreground">{language}</span></span>
+                  </div>
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
