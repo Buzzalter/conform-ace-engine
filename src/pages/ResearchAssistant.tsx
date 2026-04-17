@@ -12,8 +12,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FileDropzone } from "@/components/FileDropzone";
 import { TopicCombobox } from "@/components/TopicCombobox";
-import { Upload, Loader2, Send, X, FileText, BookOpen, MessageSquare, Trash2, Settings, Globe } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { Upload, Loader2, Send, X, FileText, BookOpen, MessageSquare, Trash2, Settings } from "lucide-react";
 import {
   fetchResearchTopics,
   fetchResearchDocuments,
@@ -132,7 +131,6 @@ function processChildren(
 
 export default function ResearchAssistant() {
   const qc = useQueryClient();
-  const { language } = useLanguage();
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadTopics, setUploadTopics] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -213,7 +211,7 @@ export default function ResearchAssistant() {
     setInput("");
     setSending(true);
     try {
-      const res: ChatResponse = await researchChat(userMsg.content, chatTopics, language);
+      const res: ChatResponse = await researchChat(userMsg.content, chatTopics);
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: res.answer, citations: res.citations },
@@ -223,7 +221,7 @@ export default function ResearchAssistant() {
     } finally {
       setSending(false);
     }
-  }, [input, chatTopics, language]);
+  }, [input, chatTopics]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
