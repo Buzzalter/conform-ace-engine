@@ -266,6 +266,7 @@ export interface DraftEvaluation {
   technical_flaws?: string[];
   creative_suggestions?: string[];
   pricing_feedback?: string;
+  ai_authenticity_warning?: string;
   [k: string]: unknown;
 }
 

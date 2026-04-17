@@ -826,6 +826,40 @@ export default function BidAnalyser() {
                 </Button>
               </div>
 
+              {/* AI Authenticity Warning */}
+              {redTeamEvaluation.ai_authenticity_warning && (() => {
+                const w = redTeamEvaluation.ai_authenticity_warning;
+                const lower = w.toLowerCase();
+                const isAI =
+                  lower.includes("warning") ||
+                  lower.includes("high probability") ||
+                  lower.includes("rewrite") ||
+                  lower.includes("fluff") ||
+                  lower.includes("ai-generated") ||
+                  lower.includes("chatgpt");
+                return isAI ? (
+                  <div className="flex items-start gap-3 rounded-lg border-2 border-destructive bg-destructive/10 px-5 py-4">
+                    <Bot className="h-6 w-6 shrink-0 text-destructive mt-0.5" />
+                    <div className="space-y-1 min-w-0">
+                      <p className="text-xs font-bold uppercase tracking-wider text-destructive flex items-center gap-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5" />
+                        AI-Authored Draft Detected
+                      </p>
+                      <p className="text-sm font-medium text-destructive leading-relaxed">
+                        {w}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2.5 rounded-lg border border-success/40 bg-success/10 px-4 py-2.5">
+                    <UserCheck className="h-4 w-4 shrink-0 text-success" />
+                    <p className="text-sm font-medium text-success leading-relaxed">
+                      {w}
+                    </p>
+                  </div>
+                );
+              })()}
+
               {/* Score Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="border-primary/40 bg-gradient-to-br from-primary/10 to-primary/5">
