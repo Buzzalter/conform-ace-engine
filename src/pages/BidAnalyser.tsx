@@ -43,6 +43,9 @@ import {
   Play,
   HelpCircle,
   MessageSquare,
+  Shield,
+  Lightbulb,
+  Skull,
 } from "lucide-react";
 import {
   Accordion,
@@ -60,9 +63,11 @@ import {
   getBids,
   deleteBid,
   runEvaluation,
+  runDraftEvaluation,
   type RFQDocument,
   type BidDocument,
   type EvaluationResult,
+  type DraftEvaluation,
 } from "@/lib/api";
 
 export default function BidAnalyser() {
@@ -70,6 +75,10 @@ export default function BidAnalyser() {
   const [viewRFQ, setViewRFQ] = useState<RFQDocument | null>(null);
   const [selectedRFQId, setSelectedRFQId] = useState<string>("");
   const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
+
+  // ── Red-Team state ──
+  const [redTeamRFQId, setRedTeamRFQId] = useState<string>("");
+  const [redTeamEvaluation, setRedTeamEvaluation] = useState<DraftEvaluation | null>(null);
 
   // ── RFQ Queries ──
   const { data: rfqs = [], isLoading: rfqsLoading } = useQuery({
@@ -133,6 +142,40 @@ export default function BidAnalyser() {
     onError: () => toast({ title: "Analysis failed", variant: "destructive" }),
   });
 
+  // ── Red-Team queries ──
+  const { data: redTeamBids = [], isLoading: redTeamBidsLoading } = useQuery({
+    queryKey: ["bid-bids", redTeamRFQId],
+    queryFn: () => getBids(redTeamRFQId),
+    enabled: !!redTeamRFQId,
+    refetchInterval: (q) =>
+      q.state.data?.some((b) => b.status === "processing") ? 2000 : false,
+  });
+
+  const uploadDraftBidMutation = useMutation({
+    mutationFn: (file: File) => uploadBid(redTeamRFQId, file),
+    onSuccess: () => {
+      toast({ title: "Draft bid uploaded" });
+      qc.invalidateQueries({ queryKey: ["bid-bids", redTeamRFQId] });
+    },
+    onError: () => toast({ title: "Upload failed", variant: "destructive" }),
+  });
+
+  const deleteDraftBidMutation = useMutation({
+    mutationFn: (id: string) => deleteBid(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bid-bids", redTeamRFQId] });
+    },
+  });
+
+  const draftEvalMutation = useMutation({
+    mutationFn: (bidId: string) => runDraftEvaluation(redTeamRFQId, bidId),
+    onSuccess: (data) => {
+      setRedTeamEvaluation(data.evaluation);
+      toast({ title: "Red-Team critique complete" });
+    },
+    onError: () => toast({ title: "Critique failed", variant: "destructive" }),
+  });
+
   const completedRFQs = useMemo(
     () => rfqs.filter((r) => r.status === "completed"),
     [rfqs]
@@ -145,6 +188,10 @@ export default function BidAnalyser() {
 
   const handleClearResults = useCallback(() => {
     setEvaluation(null);
+  }, []);
+
+  const handleClearRedTeam = useCallback(() => {
+    setRedTeamEvaluation(null);
   }, []);
 
   return (
@@ -165,6 +212,9 @@ export default function BidAnalyser() {
           <TabsTrigger value="rfqs">1. Problem Statements (RFQs)</TabsTrigger>
           <TabsTrigger value="bids" disabled={completedRFQs.length === 0}>
             2. Bid Evaluation
+          </TabsTrigger>
+          <TabsTrigger value="redteam" disabled={completedRFQs.length === 0}>
+            3. Supplier Red-Team (Draft Review)
           </TabsTrigger>
         </TabsList>
 
@@ -600,6 +650,283 @@ export default function BidAnalyser() {
                 </section>
               )}
             </>
+          )}
+        </TabsContent>
+
+        {/* ── Tab 3: Supplier Red-Team ── */}
+        <TabsContent value="redteam" className="space-y-6 mt-4">
+          <section className="rounded-xl border border-destructive/30 bg-gradient-to-br from-destructive/5 to-transparent p-5 space-y-2">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Skull className="h-5 w-5 text-destructive" />
+              Red-Team Draft Review
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Upload your draft bid before submission. The AI will brutally critique it against the RFQ — exposing gaps, weaknesses, and competitive vulnerabilities.
+            </p>
+          </section>
+
+          <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">Select Target RFQ</h2>
+            <Select
+              value={redTeamRFQId}
+              onValueChange={(v) => {
+                setRedTeamRFQId(v);
+                setRedTeamEvaluation(null);
+              }}
+            >
+              <SelectTrigger className="max-w-md">
+                <SelectValue placeholder="Choose a completed RFQ…" />
+              </SelectTrigger>
+              <SelectContent>
+                {completedRFQs.map((rfq) => (
+                  <SelectItem key={rfq.id} value={rfq.id}>
+                    {rfq.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </section>
+
+          {redTeamRFQId && !redTeamEvaluation && (
+            <>
+              <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-destructive" />
+                  Upload Your Draft Bid
+                </h2>
+                <FileDropzone
+                  onFileDrop={(f) => uploadDraftBidMutation.mutate(f)}
+                  label={uploadDraftBidMutation.isPending ? "Uploading…" : "Drop draft bid PDF here or click to browse"}
+                  sublabel="Upload a single draft bid for critique"
+                  disabled={uploadDraftBidMutation.isPending}
+                />
+              </section>
+
+              {redTeamBids.length > 0 && (
+                <section className="rounded-xl border border-border bg-card p-5 space-y-4">
+                  <h2 className="text-lg font-semibold text-foreground">Draft Bids</h2>
+                  {redTeamBidsLoading ? (
+                    <div className="flex items-center justify-center py-6 text-muted-foreground gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+                    </div>
+                  ) : (
+                    <div className="rounded-md border border-border overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Filename</TableHead>
+                            <TableHead>Status / Progress</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {redTeamBids.map((bid) => (
+                            <TableRow key={bid.id}>
+                              <TableCell className="font-medium">{bid.name}</TableCell>
+                              <TableCell>
+                                {bid.status === "processing" ? (
+                                  <div className="space-y-1 max-w-xs">
+                                    <Progress value={bid.progress} className="h-2" />
+                                    <p className="text-xs text-muted-foreground">
+                                      {bid.message || "Processing…"}
+                                    </p>
+                                  </div>
+                                ) : bid.status === "completed" ? (
+                                  <Badge variant="outline" className="border-primary/40 text-primary">
+                                    <CheckCircle2 className="h-3 w-3 mr-1" /> Ready
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="destructive">
+                                    <XCircle className="h-3 w-3 mr-1" /> Failed
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  {bid.status === "completed" && (
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="gap-1.5"
+                                      onClick={() => draftEvalMutation.mutate(bid.id)}
+                                      disabled={draftEvalMutation.isPending}
+                                    >
+                                      {draftEvalMutation.isPending ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <Skull className="h-3.5 w-3.5" />
+                                      )}
+                                      Critique My Draft Bid
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="gap-1.5 text-muted-foreground hover:text-destructive"
+                                    onClick={() => deleteDraftBidMutation.mutate(bid.id)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Remove
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </section>
+              )}
+            </>
+          )}
+
+          {/* ── Red-Team Results ── */}
+          {redTeamEvaluation && (
+            <section className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Button variant="outline" onClick={handleClearRedTeam} className="gap-2">
+                  <RotateCcw className="h-4 w-4" />
+                  Clear &amp; Start Over
+                </Button>
+              </div>
+
+              {/* Score Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="border-primary/40 bg-gradient-to-br from-primary/10 to-primary/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wider text-muted-foreground">
+                      <Shield className="h-4 w-4 text-primary" />
+                      Compliance Score
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-5xl font-bold text-primary tabular-nums">
+                        {redTeamEvaluation.compliance_score_out_of_10 ?? "—"}
+                      </span>
+                      <span className="text-2xl text-muted-foreground font-medium">/10</span>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-destructive/40 bg-gradient-to-br from-destructive/10 to-destructive/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wider text-muted-foreground">
+                      <Trophy className="h-4 w-4 text-destructive" />
+                      Competitiveness Score
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-5xl font-bold text-destructive tabular-nums">
+                        {redTeamEvaluation.competitiveness_score_out_of_10 ?? "—"}
+                      </span>
+                      <span className="text-2xl text-muted-foreground font-medium">/10</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Executive Summary */}
+              {redTeamEvaluation.executive_summary && (
+                <Card className="border-l-4 border-l-primary">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      Executive Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                      {redTeamEvaluation.executive_summary}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Critical Gaps */}
+              {redTeamEvaluation.missing_requirements && redTeamEvaluation.missing_requirements.length > 0 && (
+                <Card className="border-destructive/40 bg-destructive/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm uppercase tracking-wider text-destructive flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Critical Gaps — Missing Requirements
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2.5">
+                      {redTeamEvaluation.missing_requirements.map((m, i) => (
+                        <li key={i} className="text-sm text-foreground flex items-start gap-2.5 leading-relaxed">
+                          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
+                          <span>{m}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Technical Vulnerabilities */}
+              {redTeamEvaluation.technical_flaws && redTeamEvaluation.technical_flaws.length > 0 && (
+                <Card className="border-warning/40 bg-warning/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm uppercase tracking-wider text-foreground flex items-center gap-2">
+                      <XCircle className="h-4 w-4 text-destructive" />
+                      Technical Vulnerabilities
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2.5">
+                      {redTeamEvaluation.technical_flaws.map((t, i) => (
+                        <li key={i} className="text-sm text-foreground flex items-start gap-2.5 leading-relaxed">
+                          <XCircle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
+                          <span>{t}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Strategic Edge */}
+              {redTeamEvaluation.creative_suggestions && redTeamEvaluation.creative_suggestions.length > 0 && (
+                <Card className="border-success/40 bg-success/5">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm uppercase tracking-wider text-success flex items-center gap-2">
+                      <Lightbulb className="h-4 w-4" />
+                      Strategic Edge — Creative Suggestions
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2.5">
+                      {redTeamEvaluation.creative_suggestions.map((s, i) => (
+                        <li key={i} className="text-sm text-foreground flex items-start gap-2.5 leading-relaxed">
+                          <Lightbulb className="h-4 w-4 mt-0.5 shrink-0 text-success" />
+                          <span>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Commercial Assessment */}
+              {redTeamEvaluation.pricing_feedback && (
+                <Card className="border-l-4 border-l-success">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-success" />
+                      Commercial Assessment
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                      {redTeamEvaluation.pricing_feedback}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </section>
           )}
         </TabsContent>
       </Tabs>

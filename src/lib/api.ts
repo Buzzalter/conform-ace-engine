@@ -256,3 +256,20 @@ export async function runEvaluation(rfqId: string): Promise<{ status: string; ev
   if (!res.ok) throw new Error("Failed to run evaluation");
   return res.json();
 }
+
+export interface DraftEvaluation {
+  compliance_score_out_of_10?: number;
+  competitiveness_score_out_of_10?: number;
+  executive_summary?: string;
+  missing_requirements?: string[];
+  technical_flaws?: string[];
+  creative_suggestions?: string[];
+  pricing_feedback?: string;
+  [k: string]: unknown;
+}
+
+export async function runDraftEvaluation(rfqId: string, bidId: string): Promise<{ status: string; evaluation: DraftEvaluation }> {
+  const res = await fetch(`${BASE}/api/bid/rfq/${rfqId}/bids/${bidId}/draft-evaluate`, { method: "POST" });
+  if (!res.ok) throw new Error("Failed to run draft evaluation");
+  return res.json();
+}
