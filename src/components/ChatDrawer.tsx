@@ -54,6 +54,7 @@ export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
   const [viewingPastSessionId, setViewingPastSessionId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
+  const { language } = useLanguage();
 
   const saveCurrentChat = useCallback(() => {
     if (messages.length === 0) return;
@@ -110,7 +111,7 @@ export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
 
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
-      const response = await askChatbot(query, activeGraphIds, history);
+      const response = await askChatbot(query, activeGraphIds, history, language);
       setMessages((prev) => [...prev, { role: "assistant", content: response }]);
     } catch {
       setMessages((prev) => [
@@ -120,7 +121,7 @@ export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, activeGraphIds, messages]);
+  }, [input, loading, activeGraphIds, messages, language]);
 
   const viewingSession = viewingPastSessionId
     ? savedSessions.find((s) => s.id === viewingPastSessionId)
