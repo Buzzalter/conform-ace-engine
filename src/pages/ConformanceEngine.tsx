@@ -277,6 +277,10 @@ export default function ConformanceEngine() {
           <TabsTrigger value="knowledge" className="gap-2"><BookOpen className="h-4 w-4" />Knowledge Bank</TabsTrigger>
           <TabsTrigger value="auditor" className="gap-2"><Shield className="h-4 w-4" />Document Auditor</TabsTrigger>
         </TabsList>
+        <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+          <Globe className="h-3 w-3" />
+          <span>AI output will be synthesized in <span className="font-medium text-foreground">{language}</span>, regardless of source document language.</span>
+        </div>
 
         {/* Tab 1: Knowledge Base */}
         <TabsContent value="knowledge" className="mt-6 space-y-6">
