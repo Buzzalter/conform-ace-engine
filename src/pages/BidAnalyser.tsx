@@ -213,6 +213,9 @@ export default function BidAnalyser() {
           <TabsTrigger value="bids" disabled={completedRFQs.length === 0}>
             2. Bid Evaluation
           </TabsTrigger>
+          <TabsTrigger value="redteam" disabled={completedRFQs.length === 0}>
+            3. Supplier Red-Team (Draft Review)
+          </TabsTrigger>
         </TabsList>
 
         {/* ── Tab 1: RFQs ── */}
