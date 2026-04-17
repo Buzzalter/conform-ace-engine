@@ -142,6 +142,40 @@ export default function BidAnalyser() {
     onError: () => toast({ title: "Analysis failed", variant: "destructive" }),
   });
 
+  // ── Red-Team queries ──
+  const { data: redTeamBids = [], isLoading: redTeamBidsLoading } = useQuery({
+    queryKey: ["bid-bids", redTeamRFQId],
+    queryFn: () => getBids(redTeamRFQId),
+    enabled: !!redTeamRFQId,
+    refetchInterval: (q) =>
+      q.state.data?.some((b) => b.status === "processing") ? 2000 : false,
+  });
+
+  const uploadDraftBidMutation = useMutation({
+    mutationFn: (file: File) => uploadBid(redTeamRFQId, file),
+    onSuccess: () => {
+      toast({ title: "Draft bid uploaded" });
+      qc.invalidateQueries({ queryKey: ["bid-bids", redTeamRFQId] });
+    },
+    onError: () => toast({ title: "Upload failed", variant: "destructive" }),
+  });
+
+  const deleteDraftBidMutation = useMutation({
+    mutationFn: (id: string) => deleteBid(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["bid-bids", redTeamRFQId] });
+    },
+  });
+
+  const draftEvalMutation = useMutation({
+    mutationFn: (bidId: string) => runDraftEvaluation(redTeamRFQId, bidId),
+    onSuccess: (data) => {
+      setRedTeamEvaluation(data.evaluation);
+      toast({ title: "Red-Team critique complete" });
+    },
+    onError: () => toast({ title: "Critique failed", variant: "destructive" }),
+  });
+
   const completedRFQs = useMemo(
     () => rfqs.filter((r) => r.status === "completed"),
     [rfqs]
@@ -154,6 +188,10 @@ export default function BidAnalyser() {
 
   const handleClearResults = useCallback(() => {
     setEvaluation(null);
+  }, []);
+
+  const handleClearRedTeam = useCallback(() => {
+    setRedTeamEvaluation(null);
   }, []);
 
   return (
