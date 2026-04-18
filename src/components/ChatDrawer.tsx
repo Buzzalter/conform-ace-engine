@@ -11,7 +11,7 @@ import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { markdownComponents } from "@/pages/ConformanceEngine";
+import { markdownComponents } from "@/lib/markdown-components";
 
 // Override blockquote to render as Evidence Card within chat bubbles
 const chatMarkdownComponents = {
