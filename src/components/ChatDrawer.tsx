@@ -11,6 +11,19 @@ import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { markdownComponents } from "@/pages/ConformanceEngine";
+
+// Override blockquote to render as Evidence Card within chat bubbles
+const chatMarkdownComponents = {
+  ...markdownComponents,
+  blockquote: ({ children }: any) => (
+    <blockquote className="mt-3 mb-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm not-italic text-foreground [&_p]:my-1 [&_strong]:text-primary [&_em]:text-muted-foreground">
+      {children}
+    </blockquote>
+  ),
+  hr: () => <hr className="my-3 border-border/60" />,
+  p: ({ children }: any) => <p className="text-foreground leading-relaxed my-1.5">{children}</p>,
+};
 
 interface Message {
   role: "user" | "assistant";
