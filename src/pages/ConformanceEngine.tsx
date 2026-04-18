@@ -33,7 +33,7 @@ import html2pdf from "html2pdf.js";
 
 type AuditState = "idle" | "loading" | "polling" | "results" | "failed";
 
-const markdownComponents = {
+export const markdownComponents = {
   h1: ({ children }: any) => <h1 className="text-2xl font-bold text-primary mt-4 mb-3 pb-2 border-b border-border">{children}</h1>,
   h2: ({ children }: any) => <h2 className="text-xl font-bold text-primary mt-6 mb-3 pb-2 border-b border-border">{children}</h2>,
   h3: ({ children }: any) => <h3 className="text-lg font-semibold text-primary/80 mt-5 mb-2">{children}</h3>,
