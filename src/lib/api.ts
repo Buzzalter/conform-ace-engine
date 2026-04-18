@@ -110,7 +110,8 @@ export async function askChatbot(query: string, active_domains: string[], histor
   form.append("user_language", userLanguage);
   const res = await fetch(`${BASE}/api/chat`, { method: "POST", body: form });
   if (!res.ok) throw new Error("Failed to get chatbot response");
-  return res.text();
+  const data = await res.json();
+  return data.response;
 }
 
 export async function simulateImpact(bankName: string, proposedChange: string, userLanguage: string = "English"): Promise<Impact[]> {

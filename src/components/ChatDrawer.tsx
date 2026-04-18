@@ -11,6 +11,19 @@ import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { markdownComponents } from "@/pages/ConformanceEngine";
+
+// Override blockquote to render as Evidence Card within chat bubbles
+const chatMarkdownComponents = {
+  ...markdownComponents,
+  blockquote: ({ children }: any) => (
+    <blockquote className="mt-3 mb-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm not-italic text-foreground [&_p]:my-1 [&_strong]:text-primary [&_em]:text-muted-foreground">
+      {children}
+    </blockquote>
+  ),
+  hr: () => <hr className="my-3 border-border/60" />,
+  p: ({ children }: any) => <p className="text-foreground leading-relaxed my-1.5">{children}</p>,
+};
 
 interface Message {
   role: "user" | "assistant";
@@ -265,15 +278,15 @@ export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
                         </div>
                       )}
                       <div
-                        className={`max-w-[75%] rounded-xl px-4 py-2.5 text-sm leading-relaxed ${
+                        className={`max-w-[78%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
                           msg.role === "user"
                             ? "bg-primary text-primary-foreground"
                             : "bg-secondary text-foreground"
                         }`}
                       >
                         {msg.role === "assistant" ? (
-                          <div className="prose prose-invert prose-sm max-w-none prose-headings:text-foreground prose-headings:font-semibold prose-h3:text-base prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:text-foreground prose-strong:font-bold">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          <div className="max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={chatMarkdownComponents}>
                               {msg.content}
                             </ReactMarkdown>
                           </div>
