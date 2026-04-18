@@ -278,15 +278,15 @@ export function ChatDrawer({ activeGraphIds, disabled }: ChatDrawerProps) {
                         </div>
                       )}
                       <div
-                        className={`max-w-[75%] rounded-xl px-4 py-2.5 text-sm leading-relaxed ${
+                        className={`max-w-[78%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
                           msg.role === "user"
                             ? "bg-primary text-primary-foreground"
                             : "bg-secondary text-foreground"
                         }`}
                       >
                         {msg.role === "assistant" ? (
-                          <div className="prose prose-invert prose-sm max-w-none prose-headings:text-foreground prose-headings:font-semibold prose-h3:text-base prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-strong:text-foreground prose-strong:font-bold">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          <div className="max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]} components={chatMarkdownComponents}>
                               {msg.content}
                             </ReactMarkdown>
                           </div>
