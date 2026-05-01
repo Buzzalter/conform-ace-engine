@@ -39,6 +39,7 @@ import {
   fetchInsightsDocuments, fetchInsightsBanks, uploadInsightsDocument,
   deleteInsightsDocument, generateMasterReport, fetchMasterReport,
   askInsightsChat, generateMultimedia,
+  generateReportPodcast, generateReportVideo,
   type MasterReport, type KeyInsight, type MultimediaResult,
 } from "@/lib/insights-api";
 
