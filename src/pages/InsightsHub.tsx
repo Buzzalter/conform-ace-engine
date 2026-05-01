@@ -259,6 +259,8 @@ function ReportTab() {
   const [report, setReport] = useState<MasterReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [genPodcast, setGenPodcast] = useState(false);
+  const [genVideo, setGenVideo] = useState(false);
 
   // Auto-fetch existing report when bank changes
   useEffect(() => {
@@ -272,6 +274,30 @@ function ReportTab() {
     return () => { cancelled = true; };
   }, [selectedBank]);
 
+  // Poll for podcast/video URL while a media job is in flight or missing
+  useEffect(() => {
+    if (!selectedBank || !report) return;
+    if (!genPodcast && !genVideo) return;
+    const interval = setInterval(async () => {
+      try {
+        const r = await fetchMasterReport(selectedBank);
+        if (!r) return;
+        setReport(r);
+        if (genPodcast && r.podcast_url) {
+          setGenPodcast(false);
+          toast({ title: "Podcast ready" });
+        }
+        if (genVideo && r.video_url) {
+          setGenVideo(false);
+          toast({ title: "Video ready" });
+        }
+      } catch { /* ignore */ }
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [selectedBank, report, genPodcast, genVideo]);
+
+  const reportId = report?.report_id || report?.id || selectedBank;
+
   const handleGenerate = async () => {
     if (!selectedBank) return;
     setGenerating(true);
@@ -283,6 +309,45 @@ function ReportTab() {
       toast({ title: "Generation failed", variant: "destructive" });
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    if (!selectedBank) return;
+    try {
+      const r = await fetchMasterReport(selectedBank);
+      setReport(r);
+      toast({ title: "Report refreshed" });
+    } catch {
+      toast({ title: "Refresh failed", variant: "destructive" });
+    }
+  };
+
+  const handleGeneratePodcast = async () => {
+    if (!reportId) return;
+    try {
+      await generateReportPodcast(String(reportId), language);
+      setGenPodcast(true);
+      toast({
+        title: "Podcast generation started",
+        description: "Media is generating in the background. This may take a few minutes.",
+      });
+    } catch {
+      toast({ title: "Podcast generation failed", variant: "destructive" });
+    }
+  };
+
+  const handleGenerateVideo = async () => {
+    if (!reportId) return;
+    try {
+      await generateReportVideo(String(reportId), language);
+      setGenVideo(true);
+      toast({
+        title: "Video generation started",
+        description: "Media is generating in the background. This may take a few minutes.",
+      });
+    } catch {
+      toast({ title: "Video generation failed", variant: "destructive" });
     }
   };
 
