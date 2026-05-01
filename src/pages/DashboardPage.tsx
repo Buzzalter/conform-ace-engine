@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Shield, BookOpen, ShieldAlert, Gavel, ArrowRight } from "lucide-react";
+import { Shield, BookOpen, ShieldAlert, Gavel, Sparkles, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const features = [
@@ -42,6 +42,16 @@ const features = [
     gradient: "from-orange-500/20 to-orange-500/5",
     borderColor: "border-orange-500/40",
     iconColor: "text-orange-500",
+  },
+  {
+    title: "Intelligence & Insights Hub",
+    description:
+      "Ingest data into Knowledge Banks, generate strategic Master Reports with Medallion lineage, chat, and export multimedia.",
+    icon: Sparkles,
+    route: "/insights",
+    gradient: "from-purple-500/20 to-purple-500/5",
+    borderColor: "border-purple-500/40",
+    iconColor: "text-purple-500",
   },
 ];
 
