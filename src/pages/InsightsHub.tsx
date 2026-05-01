@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import {
   Sparkles, Upload, FileText, Loader2, Trash2, Globe, Send, Bot, User,
   Search, Trophy, Database, HardDrive, Wand2, Presentation, Mic, FileBarChart,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Video, RefreshCw,
 } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,6 +39,7 @@ import {
   fetchInsightsDocuments, fetchInsightsBanks, uploadInsightsDocument,
   deleteInsightsDocument, generateMasterReport, fetchMasterReport,
   askInsightsChat, generateMultimedia,
+  generateReportPodcast, generateReportVideo,
   type MasterReport, type KeyInsight, type MultimediaResult,
 } from "@/lib/insights-api";
 
@@ -258,6 +259,8 @@ function ReportTab() {
   const [report, setReport] = useState<MasterReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [genPodcast, setGenPodcast] = useState(false);
+  const [genVideo, setGenVideo] = useState(false);
 
   // Auto-fetch existing report when bank changes
   useEffect(() => {
@@ -271,6 +274,30 @@ function ReportTab() {
     return () => { cancelled = true; };
   }, [selectedBank]);
 
+  // Poll for podcast/video URL while a media job is in flight or missing
+  useEffect(() => {
+    if (!selectedBank || !report) return;
+    if (!genPodcast && !genVideo) return;
+    const interval = setInterval(async () => {
+      try {
+        const r = await fetchMasterReport(selectedBank);
+        if (!r) return;
+        setReport(r);
+        if (genPodcast && r.podcast_url) {
+          setGenPodcast(false);
+          toast({ title: "Podcast ready" });
+        }
+        if (genVideo && r.video_url) {
+          setGenVideo(false);
+          toast({ title: "Video ready" });
+        }
+      } catch { /* ignore */ }
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [selectedBank, report, genPodcast, genVideo]);
+
+  const reportId = report?.report_id || report?.id || selectedBank;
+
   const handleGenerate = async () => {
     if (!selectedBank) return;
     setGenerating(true);
@@ -282,6 +309,45 @@ function ReportTab() {
       toast({ title: "Generation failed", variant: "destructive" });
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    if (!selectedBank) return;
+    try {
+      const r = await fetchMasterReport(selectedBank);
+      setReport(r);
+      toast({ title: "Report refreshed" });
+    } catch {
+      toast({ title: "Refresh failed", variant: "destructive" });
+    }
+  };
+
+  const handleGeneratePodcast = async () => {
+    if (!reportId) return;
+    try {
+      await generateReportPodcast(String(reportId), language);
+      setGenPodcast(true);
+      toast({
+        title: "Podcast generation started",
+        description: "Media is generating in the background. This may take a few minutes.",
+      });
+    } catch {
+      toast({ title: "Podcast generation failed", variant: "destructive" });
+    }
+  };
+
+  const handleGenerateVideo = async () => {
+    if (!reportId) return;
+    try {
+      await generateReportVideo(String(reportId), language);
+      setGenVideo(true);
+      toast({
+        title: "Video generation started",
+        description: "Media is generating in the background. This may take a few minutes.",
+      });
+    } catch {
+      toast({ title: "Video generation failed", variant: "destructive" });
     }
   };
 
@@ -325,6 +391,74 @@ function ReportTab() {
 
       {report && !loading && (
         <div className="space-y-6">
+          <Card className="glass border-border/60">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Wand2 className="h-4 w-4 text-primary" /> Multimedia Briefings
+                  </CardTitle>
+                  <CardDescription className="text-xs mt-1">
+                    Transform this Gold Report into a podcast or video anchor briefing.
+                  </CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleRefresh} className="gap-1.5">
+                  <RefreshCw className="h-3.5 w-3.5" /> Refresh
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  onClick={handleGeneratePodcast}
+                  disabled={!reportId || genPodcast}
+                  className="gap-2 bg-gradient-to-r from-primary to-primary/80"
+                >
+                  {genPodcast ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
+                  🎧 Generate Podcast Briefing
+                </Button>
+                <Button
+                  onClick={handleGenerateVideo}
+                  disabled={!reportId || genVideo}
+                  variant="secondary"
+                  className="gap-2"
+                >
+                  {genVideo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4" />}
+                  📺 Generate Video Anchor
+                </Button>
+              </div>
+
+              {report.podcast_url && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-medium text-primary">
+                    <Mic className="h-3.5 w-3.5" /> Podcast Briefing
+                  </div>
+                  <audio controls src={report.podcast_url} className="w-full">
+                    Your browser does not support the audio element.
+                  </audio>
+                </div>
+              )}
+
+              {report.video_url && (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-medium text-primary">
+                    <Video className="h-3.5 w-3.5" /> Video Anchor
+                  </div>
+                  <video controls muted src={report.video_url} className="w-full rounded-md bg-black">
+                    Your browser does not support the video element.
+                  </video>
+                </div>
+              )}
+
+              {(genPodcast || genVideo) && !report.podcast_url && !report.video_url && (
+                <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Polling for media… this may take a few minutes.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-transparent">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
