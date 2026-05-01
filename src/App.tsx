@@ -11,6 +11,7 @@ import ConformanceEngine from "@/pages/ConformanceEngine";
 import ResearchAssistant from "@/pages/ResearchAssistant";
 import RedactionEngine from "@/pages/RedactionEngine";
 import BidAnalyser from "@/pages/BidAnalyser";
+import InsightsHub from "@/pages/InsightsHub";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ function AppLayout() {
               <Route path="/research" element={<ResearchAssistant />} />
               <Route path="/redaction" element={<RedactionEngine />} />
               <Route path="/bid-analyser" element={<BidAnalyser />} />
+              <Route path="/insights" element={<InsightsHub />} />
             </Routes>
           </main>
         </div>
