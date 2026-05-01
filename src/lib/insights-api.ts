@@ -25,10 +25,34 @@ export interface KeyInsight {
 }
 
 export interface MasterReport {
+  id?: string;
+  report_id?: string;
   bank_name?: string;
   executive_summary: string;
   key_insights: KeyInsight[];
   generated_at?: string;
+  podcast_url?: string;
+  video_url?: string;
+}
+
+export async function generateReportPodcast(reportId: string, userLanguage: string = "English"): Promise<void> {
+  const form = new FormData();
+  form.append("user_language", userLanguage);
+  const res = await fetch(
+    `${BASE}/api/insights/reports/${encodeURIComponent(reportId)}/generate-podcast`,
+    { method: "POST", body: form }
+  );
+  if (!res.ok) throw new Error("Failed to start podcast generation");
+}
+
+export async function generateReportVideo(reportId: string, userLanguage: string = "English"): Promise<void> {
+  const form = new FormData();
+  form.append("user_language", userLanguage);
+  const res = await fetch(
+    `${BASE}/api/insights/reports/${encodeURIComponent(reportId)}/generate-video`,
+    { method: "POST", body: form }
+  );
+  if (!res.ok) throw new Error("Failed to start video generation");
 }
 
 export async function fetchInsightsDocuments(): Promise<InsightsDocument[]> {
