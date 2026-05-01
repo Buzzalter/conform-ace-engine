@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import {
   Sparkles, Upload, FileText, Loader2, Trash2, Globe, Send, Bot, User,
   Search, Trophy, Database, HardDrive, Wand2, Presentation, Mic, FileBarChart,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, Video, RefreshCw,
 } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
