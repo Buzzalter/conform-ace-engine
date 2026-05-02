@@ -39,7 +39,7 @@ import {
   fetchInsightsDocuments, fetchInsightsBanks, uploadInsightsDocument,
   deleteInsightsDocument, generateMasterReport, fetchMasterReport,
   askInsightsChat, generateMultimedia,
-  generateReportPodcast, generateReportVideo,
+  
   type MasterReport, type KeyInsight, type MultimediaResult,
 } from "@/lib/insights-api";
 
@@ -273,7 +273,7 @@ function ReportTab() {
   }, [selectedBank]);
 
 
-  const reportId = report?.report_id || report?.id || selectedBank;
+  
 
   const handleGenerate = async () => {
     if (!selectedBank) return;
