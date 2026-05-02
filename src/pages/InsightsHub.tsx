@@ -295,16 +295,9 @@ function ReportTab() {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
 
-  // Auto-fetch existing report when bank changes
+  // Clear report when bank selection changes — only show after explicit generation or history load
   useEffect(() => {
-    if (!selectedBank) { setReport(null); return; }
-    let cancelled = false;
-    setLoading(true);
-    fetchMasterReport(selectedBank)
-      .then((r) => { if (!cancelled) setReport(r); })
-      .catch(() => { if (!cancelled) setReport(null); })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+    setReport(null);
   }, [selectedBank]);
 
 
