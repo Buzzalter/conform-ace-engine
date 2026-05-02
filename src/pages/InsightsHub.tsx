@@ -596,6 +596,7 @@ function ChatTab() {
   };
 
   return (
+    <div className="space-y-6">
     <Card className="glass border-border/60 flex flex-col h-[70vh]">
       <CardHeader className="border-b border-border/40 shrink-0">
         <CardTitle className="text-lg flex items-center gap-2">
