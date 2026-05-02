@@ -761,16 +761,32 @@ function MultimediaResultView({
   }, [result.status, bankName, result.material_type, userLanguage, onUpdate]);
 
   if (result.status === "processing") {
+    const isPodcast = result.material_type === "podcast";
+    const MediaIcon = isPodcast ? Mic : Video;
     return (
-      <Card className="glass border-border/60">
-        <CardContent className="flex flex-col items-center justify-center py-16 space-y-6 text-center">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full blur-xl bg-primary/20 animate-pulse" />
-            <Loader2 className="h-12 w-12 text-primary animate-spin relative z-10" />
+      <Card className="glass border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background overflow-hidden">
+        <CardContent className="flex flex-col items-center justify-center py-16 space-y-6 text-center relative">
+          {/* Ambient glow */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-64 w-64 rounded-full bg-primary/10 blur-3xl animate-pulse" />
           </div>
-          <div className="space-y-2">
+
+          {/* Custom themed spinner */}
+          <div className="relative h-24 w-24 flex items-center justify-center">
+            {/* Outer rotating ring */}
+            <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
+            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary border-r-primary/60 animate-spin" style={{ animationDuration: "1.8s" }} />
+            {/* Inner counter-rotating ring */}
+            <div className="absolute inset-3 rounded-full border border-transparent border-b-primary/70 border-l-primary/40 animate-spin" style={{ animationDuration: "2.5s", animationDirection: "reverse" }} />
+            {/* Pulsing core */}
+            <div className="absolute inset-6 rounded-full bg-primary/15 animate-pulse" />
+            {/* Center icon */}
+            <MediaIcon className="relative h-7 w-7 text-primary z-10" />
+          </div>
+
+          <div className="space-y-2 relative z-10">
             <CardTitle className="text-xl">
-              Synthesizing {result.material_type === "podcast" ? "AI Podcast" : "Video Briefing"}...
+              Synthesizing {isPodcast ? "AI Podcast" : "Video Briefing"}…
             </CardTitle>
             <p className="text-muted-foreground max-w-md mx-auto">
               This is a heavy GPU workflow that takes 10-20 minutes depending on the size of the report. The AI is chunking the script and generating the media sequentially.
