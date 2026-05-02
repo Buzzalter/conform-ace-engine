@@ -165,3 +165,110 @@ export function downloadMasterReportPDF(bankName: string) {
   // Opens the GET route which triggers the PDF file download
   window.open(`${BASE}/api/insights/banks/${encodeURIComponent(bankName)}/report/pdf`, '_blank');
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// History API
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface HistoryItem {
+  id: string;
+  title: string;
+  bank_name?: string;
+  created_at: string;
+  // Reports
+  report_id?: string;
+  // Multimedia
+  material_type?: string;
+  audio_url?: string;
+  video_url?: string;
+  // Chat
+  preview?: string;
+  message_count?: number;
+}
+
+export interface ChatHistoryMessage {
+  role: "user" | "assistant";
+  content: string;
+  created_at?: string;
+}
+
+export interface ChatHistoryDetail extends HistoryItem {
+  messages: ChatHistoryMessage[];
+}
+
+// ── Reports history ─────────────────────────────────────────────────────────
+export async function fetchReportHistory(): Promise<HistoryItem[]> {
+  const res = await fetch(`${BASE}/api/insights/history/reports`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function deleteReportHistory(id: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/insights/history/reports/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete report from history");
+}
+
+export async function fetchReportFromHistory(id: string): Promise<MasterReport> {
+  const res = await fetch(`${BASE}/api/insights/history/reports/${encodeURIComponent(id)}`);
+  if (!res.ok) throw new Error("Failed to load report");
+  return res.json();
+}
+
+export function downloadReportFromHistory(id: string) {
+  window.open(`${BASE}/api/insights/history/reports/${encodeURIComponent(id)}/pdf`, "_blank");
+}
+
+// ── Chat history ────────────────────────────────────────────────────────────
+export async function fetchChatHistory(): Promise<HistoryItem[]> {
+  const res = await fetch(`${BASE}/api/insights/history/chats`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function fetchChatConversation(id: string): Promise<ChatHistoryDetail> {
+  const res = await fetch(`${BASE}/api/insights/history/chats/${encodeURIComponent(id)}`);
+  if (!res.ok) throw new Error("Failed to load conversation");
+  return res.json();
+}
+
+export async function deleteChatHistory(id: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/insights/history/chats/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete conversation");
+}
+
+// ── Multimedia history ──────────────────────────────────────────────────────
+export async function fetchMultimediaHistory(): Promise<HistoryItem[]> {
+  const res = await fetch(`${BASE}/api/insights/history/multimedia`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function deleteMultimediaHistory(id: string): Promise<void> {
+  const res = await fetch(`${BASE}/api/insights/history/multimedia/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete multimedia");
+}
+
+// ── Ingestion history (completed/failed docs) ───────────────────────────────
+export async function fetchIngestionHistory(): Promise<HistoryItem[]> {
+  const res = await fetch(`${BASE}/api/insights/history/ingestion`);
+  if (!res.ok) {
+    // Fallback: derive from documents endpoint
+    const docs = await fetchInsightsDocuments().catch(() => []);
+    return docs
+      .filter((d) => d.status === "completed" || d.status === "failed")
+      .map((d) => ({
+        id: d.id,
+        title: d.name,
+        bank_name: d.bank,
+        created_at: d.uploaded_at || new Date().toISOString(),
+      }));
+  }
+  return res.json();
+}
+

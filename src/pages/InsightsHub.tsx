@@ -32,6 +32,10 @@ import {
 import { FileDropzone } from "@/components/FileDropzone";
 import { BankCombobox } from "@/components/BankCombobox";
 import { CustomAudioPlayer } from "@/components/CustomAudioPlayer";
+import { HistoryPane, ChatConversationView } from "@/components/HistoryPane";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { markdownComponents } from "@/lib/markdown-components";
@@ -40,7 +44,11 @@ import {
   fetchInsightsDocuments, fetchInsightsBanks, uploadInsightsDocument,
   deleteInsightsDocument, generateMasterReport, fetchMasterReport,
   askInsightsChat, generateMultimedia, downloadMasterReportPDF,
-  type MasterReport, type KeyInsight, type MultimediaResult,
+  fetchReportHistory, deleteReportHistory, fetchReportFromHistory, downloadReportFromHistory,
+  fetchChatHistory, fetchChatConversation, deleteChatHistory,
+  fetchMultimediaHistory, deleteMultimediaHistory,
+  fetchIngestionHistory,
+  type MasterReport, type KeyInsight, type MultimediaResult, type HistoryItem, type ChatHistoryDetail,
 } from "@/lib/insights-api";
 
 const MATERIAL_TYPES = [
@@ -239,7 +247,36 @@ function IngestTab() {
           )}
         </CardContent>
       </Card>
+
+      <IngestionHistoryPane />
     </div>
+  );
+}
+
+function IngestionHistoryPane() {
+  const qc = useQueryClient();
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["ingestionHistory"],
+    queryFn: fetchIngestionHistory,
+  });
+  const del = useMutation({
+    mutationFn: deleteInsightsDocument,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ingestionHistory"] });
+      qc.invalidateQueries({ queryKey: ["insightsDocs"] });
+      toast({ title: "Removed from history" });
+    },
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
+  });
+  return (
+    <HistoryPane
+      title="Ingestion History"
+      description="Previously processed documents"
+      items={items}
+      loading={isLoading}
+      emptyHint="No completed ingestions yet."
+      onDelete={(it) => del.mutate(it.id)}
+    />
   );
 }
 
@@ -375,7 +412,55 @@ function ReportTab() {
           </div>
         </div>
       )}
+
+      <ReportHistoryPane
+        onLoad={(r, bank) => {
+          setReport(r);
+          if (bank) setSelectedBank(bank);
+        }}
+      />
     </div>
+  );
+}
+
+function ReportHistoryPane({
+  onLoad,
+}: { onLoad: (report: MasterReport, bank?: string) => void }) {
+  const qc = useQueryClient();
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["reportHistory"],
+    queryFn: fetchReportHistory,
+  });
+  const del = useMutation({
+    mutationFn: deleteReportHistory,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["reportHistory"] });
+      toast({ title: "Report removed from history" });
+    },
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
+  });
+  const handleView = async (item: HistoryItem) => {
+    try {
+      const r = await fetchReportFromHistory(item.id);
+      onLoad(r, item.bank_name);
+      toast({ title: "Loaded historical report" });
+    } catch {
+      toast({ title: "Failed to load report", variant: "destructive" });
+    }
+  };
+  return (
+    <HistoryPane
+      title="Report History"
+      description="Previously generated Master Reports"
+      items={items}
+      loading={isLoading}
+      emptyHint="No reports generated yet."
+      showView
+      showDownload
+      onView={handleView}
+      onDownload={(it) => downloadReportFromHistory(it.id)}
+      onDelete={(it) => del.mutate(it.id)}
+    />
   );
 }
 
@@ -511,6 +596,7 @@ function ChatTab() {
   };
 
   return (
+    <div className="space-y-6">
     <Card className="glass border-border/60 flex flex-col h-[70vh]">
       <CardHeader className="border-b border-border/40 shrink-0">
         <CardTitle className="text-lg flex items-center gap-2">
@@ -615,6 +701,68 @@ function ChatTab() {
         </form>
       </div>
     </Card>
+    <ChatHistoryPane />
+    </div>
+  );
+}
+
+function ChatHistoryPane() {
+  const qc = useQueryClient();
+  const [viewing, setViewing] = useState<ChatHistoryDetail | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["chatHistory"],
+    queryFn: fetchChatHistory,
+  });
+  const del = useMutation({
+    mutationFn: deleteChatHistory,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chatHistory"] });
+      toast({ title: "Conversation removed" });
+    },
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
+  });
+  const handleView = async (item: HistoryItem) => {
+    setViewing({ ...item, messages: [] });
+    setViewLoading(true);
+    try {
+      const detail = await fetchChatConversation(item.id);
+      setViewing(detail);
+    } catch {
+      toast({ title: "Failed to load conversation", variant: "destructive" });
+      setViewing(null);
+    } finally {
+      setViewLoading(false);
+    }
+  };
+  return (
+    <>
+      <HistoryPane
+        title="Chat History"
+        description="Read-only archive of past conversations"
+        items={items}
+        loading={isLoading}
+        emptyHint="No saved conversations yet."
+        showView
+        onView={handleView}
+        onDelete={(it) => del.mutate(it.id)}
+      />
+      <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{viewing?.title || "Conversation"}</DialogTitle>
+            <DialogDescription>
+              Read-only archived conversation
+              {viewing?.bank_name && ` · ${viewing.bank_name}`}
+            </DialogDescription>
+          </DialogHeader>
+          <ChatConversationView
+            messages={viewing?.messages || []}
+            loading={viewLoading}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -714,7 +862,66 @@ function MultimediaTab() {
           onUpdate={setResult} 
         />
       )}
+
+      <MultimediaHistoryPane onLoad={(r) => setResult(r)} />
     </div>
+  );
+}
+
+function MultimediaHistoryPane({ onLoad }: { onLoad: (r: MultimediaResult) => void }) {
+  const qc = useQueryClient();
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["multimediaHistory"],
+    queryFn: fetchMultimediaHistory,
+  });
+  const del = useMutation({
+    mutationFn: deleteMultimediaHistory,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["multimediaHistory"] });
+      toast({ title: "Removed from history" });
+    },
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
+  });
+  const handleDownload = (item: HistoryItem) => {
+    const url = item.audio_url || item.video_url;
+    if (!url) return;
+    const full = url.startsWith("http") ? url : `http://localhost:8000${url}`;
+    const a = document.createElement("a");
+    a.href = full;
+    a.download = item.title || "media";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+  const handleView = (item: HistoryItem) => {
+    onLoad({
+      material_type: item.material_type || (item.audio_url ? "podcast" : "video"),
+      title: item.title,
+      audio_url: item.audio_url,
+      video_url: item.video_url,
+      status: "success",
+    } as MultimediaResult);
+  };
+  return (
+    <HistoryPane
+      title="Multimedia History"
+      description="Previously generated podcasts and videos"
+      items={items}
+      loading={isLoading}
+      emptyHint="No multimedia generated yet."
+      showView
+      showDownload
+      onView={handleView}
+      onDownload={handleDownload}
+      onDelete={(it) => del.mutate(it.id)}
+      renderBadge={(it) =>
+        it.material_type ? (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-secondary/60 capitalize">
+            {it.material_type}
+          </Badge>
+        ) : null
+      }
+    />
   );
 }
 
