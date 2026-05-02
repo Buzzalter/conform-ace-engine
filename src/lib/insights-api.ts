@@ -17,9 +17,12 @@ export interface InsightLineage {
   source_document?: string;
 }
 
+
+
 export interface KeyInsight {
   title?: string;
-  insight: string;
+  insight?: string;
+  description?: string; 
   category?: string;
   lineage?: InsightLineage[];
 }
@@ -137,9 +140,8 @@ export interface MultimediaSlide {
 export interface MultimediaResult {
   material_type: string;
   title?: string;
-  slides?: MultimediaSlide[];
-  script?: string;
-  sections?: Array<{ heading: string; body: string }>;
+  video_url?: string;
+  audio_url?: string;
   [k: string]: unknown;
 }
 
@@ -157,4 +159,9 @@ export async function generateMultimedia(
   );
   if (!res.ok) throw new Error("Failed to generate multimedia");
   return res.json();
+}
+
+export function downloadMasterReportPDF(bankName: string) {
+  // Opens the GET route which triggers the PDF file download
+  window.open(`${BASE}/api/insights/banks/${encodeURIComponent(bankName)}/report/pdf`, '_blank');
 }
