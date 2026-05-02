@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FileDropzone } from "@/components/FileDropzone";
 import { BankCombobox } from "@/components/BankCombobox";
+import { CustomAudioPlayer } from "@/components/CustomAudioPlayer";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { markdownComponents } from "@/lib/markdown-components";
