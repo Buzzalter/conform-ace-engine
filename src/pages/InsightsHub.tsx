@@ -32,6 +32,10 @@ import {
 import { FileDropzone } from "@/components/FileDropzone";
 import { BankCombobox } from "@/components/BankCombobox";
 import { CustomAudioPlayer } from "@/components/CustomAudioPlayer";
+import { HistoryPane, ChatConversationView } from "@/components/HistoryPane";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { markdownComponents } from "@/lib/markdown-components";
@@ -40,7 +44,11 @@ import {
   fetchInsightsDocuments, fetchInsightsBanks, uploadInsightsDocument,
   deleteInsightsDocument, generateMasterReport, fetchMasterReport,
   askInsightsChat, generateMultimedia, downloadMasterReportPDF,
-  type MasterReport, type KeyInsight, type MultimediaResult,
+  fetchReportHistory, deleteReportHistory, fetchReportFromHistory, downloadReportFromHistory,
+  fetchChatHistory, fetchChatConversation, deleteChatHistory,
+  fetchMultimediaHistory, deleteMultimediaHistory,
+  fetchIngestionHistory,
+  type MasterReport, type KeyInsight, type MultimediaResult, type HistoryItem, type ChatHistoryDetail,
 } from "@/lib/insights-api";
 
 const MATERIAL_TYPES = [
