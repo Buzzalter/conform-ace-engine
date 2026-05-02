@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import {
   Sparkles, Upload, FileText, Loader2, Trash2, Globe, Send, Bot, User,
   Search, Trophy, Database, HardDrive, Wand2, Presentation, Mic, FileBarChart,
-  ChevronLeft, ChevronRight, Video, RefreshCw,
+  ChevronLeft, ChevronRight, Video, RefreshCw, FileDown
 } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,12 +44,10 @@ import {
 } from "@/lib/insights-api";
 
 const MATERIAL_TYPES = [
-  { id: "presentation_deck", label: "Presentation Deck", icon: Presentation,
-    description: "Slide-by-slide narrative for stakeholder presentations." },
-  { id: "podcast_script", label: "Podcast Script", icon: Mic,
-    description: "Conversational long-form script ready to record." },
-  { id: "executive_briefing", label: "Executive Briefing", icon: FileBarChart,
-    description: "One-page executive summary with key recommendations." },
+  { id: "video", label: "AI Video Briefing", icon: Video,
+    description: "Generates a continuous, frame-chained news briefing video using LTX-Video." },
+  { id: "podcast", label: "AI Podcast", icon: Mic,
+    description: "Generates a long-form, multi-speaker conversational podcast using VibeVoice." }
 ];
 
 export default function InsightsHub() {
@@ -341,9 +339,12 @@ function ReportTab() {
 
       {report && !loading && (
         <div className="space-y-6">
-          <div className="flex justify-end">
-            <Button variant="ghost" size="sm" onClick={handleRefresh} className="gap-1.5">
-              <RefreshCw className="h-3.5 w-3.5" /> Refresh
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadMasterReportPDF(selectedBank)} className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10">
+              <FileDown className="h-4 w-4" /> Export PDF
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleRefresh} className="gap-1.5 text-muted-foreground">
+              <RefreshCw className="h-4 w-4" /> Refresh
             </Button>
           </div>
 
@@ -399,9 +400,9 @@ function KeyInsightCard({ insight, index }: { insight: KeyInsight; index: number
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="prose prose-sm max-w-none">
+          <div className="prose prose-sm max-w-none text-muted-foreground">
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {insight.insight}
+              {insight.description || insight.insight || "_No description provided._"}
             </ReactMarkdown>
           </div>
 
@@ -705,128 +706,134 @@ function MultimediaTab() {
         </CardContent>
       </Card>
 
-      {result && <MultimediaResultView result={result} />}
+      {result && (
+        <MultimediaResultView 
+          result={result}
+          bankName={selectedBank} 
+          userLanguage={language} 
+          onUpdate={setResult} 
+        />
+      )}
     </div>
   );
 }
 
-function MultimediaResultView({ result }: { result: MultimediaResult }) {
-  const scrollerRef = useRef<HTMLDivElement>(null);
+function MultimediaResultView({ 
+  result, 
+  bankName, 
+  userLanguage, 
+  onUpdate 
+}: { 
+  result: MultimediaResult; 
+  bankName?: string; 
+  userLanguage?: string;
+  onUpdate?: (data: MultimediaResult) => void;
+}) {
 
-  // Slide deck rendering
-  if (result.slides && result.slides.length > 0) {
-    const scroll = (dir: "left" | "right") => {
-      const el = scrollerRef.current;
-      if (!el) return;
-      el.scrollBy({ left: dir === "left" ? -el.clientWidth * 0.8 : el.clientWidth * 0.8, behavior: "smooth" });
-    };
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (result.status === "processing" && bankName && onUpdate) {
+      interval = setInterval(async () => {
+         try {
+            const form = new FormData();
+            form.append("material_type", result.material_type);
+            form.append("user_language", userLanguage || "English");
+            form.append("action", "poll");
+            
+            // Ping the backend to check the status
+            const res = await fetch(`http://localhost:8000/api/insights/banks/${encodeURIComponent(bankName)}/multimedia`, {
+              method: "POST",
+              body: form
+            });
+            const data = await res.json();
+            
+            // If the backend says success, it finished! Update the UI and stop polling.
+            if (data.status === "success") {
+              onUpdate(data);
+              clearInterval(interval);
+            }
+         } catch (e) {
+           console.error("Polling error:", e);
+         }
+      }, 10000); 
+    }
+    
+    return () => clearInterval(interval);
+  }, [result.status, bankName, result.material_type, userLanguage, onUpdate]);
+
+  if (result.status === "processing") {
     return (
       <Card className="glass border-border/60">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Presentation className="h-4 w-4 text-primary" />
-              {result.title || "Slide Deck"}
+        <CardContent className="flex flex-col items-center justify-center py-16 space-y-6 text-center">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full blur-xl bg-primary/20 animate-pulse" />
+            <Loader2 className="h-12 w-12 text-primary animate-spin relative z-10" />
+          </div>
+          <div className="space-y-2">
+            <CardTitle className="text-xl">
+              Synthesizing {result.material_type === "podcast" ? "AI Podcast" : "Video Briefing"}...
             </CardTitle>
-            <CardDescription>{result.slides.length} slide{result.slides.length !== 1 ? "s" : ""}</CardDescription>
-          </div>
-          <div className="flex gap-1">
-            <Button variant="outline" size="icon" onClick={() => scroll("left")}><ChevronLeft className="h-4 w-4" /></Button>
-            <Button variant="outline" size="icon" onClick={() => scroll("right")}><ChevronRight className="h-4 w-4" /></Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div
-            ref={scrollerRef}
-            className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-3 scroll-smooth"
-          >
-            {result.slides.map((s, i) => (
-              <div
-                key={i}
-                className="snap-start shrink-0 w-[80%] sm:w-[60%] aspect-video rounded-xl border border-border/60 bg-gradient-to-br from-card to-secondary/40 p-6 flex flex-col"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <Badge variant="outline" className="text-[10px]">Slide {i + 1}</Badge>
-                  <Presentation className="h-4 w-4 text-muted-foreground" />
-                </div>
-                {s.title && <h3 className="text-lg font-bold text-foreground mb-2">{s.title}</h3>}
-                {s.content && (
-                  <div className="text-sm text-muted-foreground leading-relaxed mb-2">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{s.content}</ReactMarkdown>
-                  </div>
-                )}
-                {s.bullets && s.bullets.length > 0 && (
-                  <ul className="list-disc pl-5 text-sm text-foreground/80 space-y-1">
-                    {s.bullets.map((b, j) => <li key={j}>{b}</li>)}
-                  </ul>
-                )}
-                {s.speaker_notes && (
-                  <div className="mt-auto pt-3 border-t border-border/60 text-[11px] text-muted-foreground italic">
-                    <span className="font-semibold text-foreground/80">Notes:</span> {s.speaker_notes}
-                  </div>
-                )}
-              </div>
-            ))}
+            <p className="text-muted-foreground max-w-md mx-auto">
+              This is a heavy GPU workflow that takes 10-20 minutes depending on the size of the report. The AI is chunking the script and generating the media sequentially.
+            </p>
+            <p className="text-sm font-medium text-primary mt-4">
+              You can safely navigate away! Come back later and click the generate button again to view your final media.
+            </p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Sectioned (briefing) rendering
-  if (result.sections && result.sections.length > 0) {
+  if (result.video_url) {
+    return (
+      <Card className="glass border-border/60 overflow-hidden">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Video className="h-4 w-4 text-primary" /> Generated Video Briefing
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center bg-black/50 p-6">
+          <video 
+            src={result.video_url} 
+            controls 
+            autoPlay
+            className="max-w-full rounded-xl shadow-2xl border border-border/40" 
+            style={{ maxHeight: '60vh' }}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+
+  if (result.audio_url) {
     return (
       <Card className="glass border-border/60">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <FileBarChart className="h-4 w-4 text-primary" />
-            {result.title || "Briefing"}
+            <Mic className="h-4 w-4 text-primary" /> Generated AI Podcast
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {result.sections.map((sec, i) => (
-            <div key={i}>
-              <h3 className="text-base font-semibold text-foreground mb-1">{sec.heading}</h3>
-              <div className="prose prose-sm max-w-none">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{sec.body}</ReactMarkdown>
-              </div>
-            </div>
-          ))}
+        <CardContent className="py-8">
+          <audio 
+            src={`http://localhost:8000${result.audio_url}`} 
+            controls 
+            className="w-full outline-none" 
+          />
         </CardContent>
       </Card>
     );
   }
 
-  // Script rendering
-  if (result.script) {
-    return (
-      <Card className="glass border-border/60">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Mic className="h-4 w-4 text-primary" />
-            {result.title || "Script"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="prose prose-sm max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {result.script}
-            </ReactMarkdown>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Fallback: raw JSON
   return (
     <Card className="glass border-border/60">
       <CardHeader>
         <CardTitle className="text-lg">Generated Material</CardTitle>
       </CardHeader>
       <CardContent>
-        <pre className="text-xs font-mono text-muted-foreground bg-muted/40 border border-border rounded-md p-3 whitespace-pre-wrap break-words max-h-96 overflow-auto">
-{JSON.stringify(result, null, 2)}
+        <pre className="text-xs font-mono text-muted-foreground bg-muted/40 border border-border rounded-md p-3 whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+          {JSON.stringify(result, null, 2)}
         </pre>
       </CardContent>
     </Card>
