@@ -670,7 +670,7 @@ function MultimediaTab() {
 
           <div className="space-y-1.5">
             <Label className="text-sm">Material Type</Label>
-            <div className="grid sm:grid-cols-3 gap-2">
+            <div className="flex flex-wrap justify-center gap-3">
               {MATERIAL_TYPES.map((m) => {
                 const Icon = m.icon;
                 const active = materialType === m.id;
@@ -680,7 +680,7 @@ function MultimediaTab() {
                     type="button"
                     onClick={() => setMaterialType(m.id)}
                     className={cn(
-                      "flex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-all",
+                      "flex flex-col items-start gap-1 p-4 rounded-lg border text-left transition-all w-full sm:w-[280px]",
                       active
                         ? "border-primary bg-primary/10 ring-1 ring-primary/30"
                         : "border-border/50 bg-secondary/40 hover:border-primary/30"
