@@ -830,11 +830,10 @@ function MultimediaResultView({
             <Mic className="h-4 w-4 text-primary" /> Generated AI Podcast
           </CardTitle>
         </CardHeader>
-        <CardContent className="py-8">
-          <audio 
-            src={`http://localhost:8000${result.audio_url}`} 
-            controls 
-            className="w-full outline-none" 
+        <CardContent className="py-6">
+          <CustomAudioPlayer
+            src={`http://localhost:8000${result.audio_url}`}
+            title={result.title || "AI Podcast Briefing"}
           />
         </CardContent>
       </Card>
