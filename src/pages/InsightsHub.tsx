@@ -701,6 +701,68 @@ function ChatTab() {
         </form>
       </div>
     </Card>
+    <ChatHistoryPane />
+    </div>
+  );
+}
+
+function ChatHistoryPane() {
+  const qc = useQueryClient();
+  const [viewing, setViewing] = useState<ChatHistoryDetail | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["chatHistory"],
+    queryFn: fetchChatHistory,
+  });
+  const del = useMutation({
+    mutationFn: deleteChatHistory,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chatHistory"] });
+      toast({ title: "Conversation removed" });
+    },
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
+  });
+  const handleView = async (item: HistoryItem) => {
+    setViewing({ ...item, messages: [] });
+    setViewLoading(true);
+    try {
+      const detail = await fetchChatConversation(item.id);
+      setViewing(detail);
+    } catch {
+      toast({ title: "Failed to load conversation", variant: "destructive" });
+      setViewing(null);
+    } finally {
+      setViewLoading(false);
+    }
+  };
+  return (
+    <>
+      <HistoryPane
+        title="Chat History"
+        description="Read-only archive of past conversations"
+        items={items}
+        loading={isLoading}
+        emptyHint="No saved conversations yet."
+        showView
+        onView={handleView}
+        onDelete={(it) => del.mutate(it.id)}
+      />
+      <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{viewing?.title || "Conversation"}</DialogTitle>
+            <DialogDescription>
+              Read-only archived conversation
+              {viewing?.bank_name && ` · ${viewing.bank_name}`}
+            </DialogDescription>
+          </DialogHeader>
+          <ChatConversationView
+            messages={viewing?.messages || []}
+            loading={viewLoading}
+          />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
