@@ -862,7 +862,66 @@ function MultimediaTab() {
           onUpdate={setResult} 
         />
       )}
+
+      <MultimediaHistoryPane onLoad={(r) => setResult(r)} />
     </div>
+  );
+}
+
+function MultimediaHistoryPane({ onLoad }: { onLoad: (r: MultimediaResult) => void }) {
+  const qc = useQueryClient();
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["multimediaHistory"],
+    queryFn: fetchMultimediaHistory,
+  });
+  const del = useMutation({
+    mutationFn: deleteMultimediaHistory,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["multimediaHistory"] });
+      toast({ title: "Removed from history" });
+    },
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
+  });
+  const handleDownload = (item: HistoryItem) => {
+    const url = item.audio_url || item.video_url;
+    if (!url) return;
+    const full = url.startsWith("http") ? url : `http://localhost:8000${url}`;
+    const a = document.createElement("a");
+    a.href = full;
+    a.download = item.title || "media";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  };
+  const handleView = (item: HistoryItem) => {
+    onLoad({
+      material_type: item.material_type || (item.audio_url ? "podcast" : "video"),
+      title: item.title,
+      audio_url: item.audio_url,
+      video_url: item.video_url,
+      status: "success",
+    } as MultimediaResult);
+  };
+  return (
+    <HistoryPane
+      title="Multimedia History"
+      description="Previously generated podcasts and videos"
+      items={items}
+      loading={isLoading}
+      emptyHint="No multimedia generated yet."
+      showView
+      showDownload
+      onView={handleView}
+      onDownload={handleDownload}
+      onDelete={(it) => del.mutate(it.id)}
+      renderBadge={(it) =>
+        it.material_type ? (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-secondary/60 capitalize">
+            {it.material_type}
+          </Badge>
+        ) : null
+      }
+    />
   );
 }
 
