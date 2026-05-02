@@ -802,19 +802,32 @@ function MultimediaResultView({
   }
 
   if (result.video_url) {
+    const videoSrc = result.video_url.startsWith("http")
+      ? result.video_url
+      : `http://localhost:8000${result.video_url}`;
     return (
       <Card className="glass border-border/60 overflow-hidden">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-lg flex items-center gap-2">
             <Video className="h-4 w-4 text-primary" /> Generated Video Briefing
           </CardTitle>
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+          >
+            <a href={videoSrc} download aria-label="Download video">
+              <FileDown className="h-4 w-4" /> Download
+            </a>
+          </Button>
         </CardHeader>
         <CardContent className="flex justify-center bg-black/50 p-6">
-          <video 
-            src={result.video_url} 
-            controls 
+          <video
+            src={videoSrc}
+            controls
             autoPlay
-            className="max-w-full rounded-xl shadow-2xl border border-border/40" 
+            className="max-w-full rounded-xl shadow-2xl border border-border/40"
             style={{ maxHeight: '60vh' }}
           />
         </CardContent>
