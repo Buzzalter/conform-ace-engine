@@ -247,13 +247,6 @@ function IngestTab() {
           )}
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-          )}
-        </CardContent>
-      </Card>
 
       <IngestionHistoryPane />
     </div>
