@@ -251,6 +251,42 @@ function IngestTab() {
   );
 }
 
+          )}
+        </CardContent>
+      </Card>
+
+      <IngestionHistoryPane />
+    </div>
+  );
+}
+
+function IngestionHistoryPane() {
+  const qc = useQueryClient();
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["ingestionHistory"],
+    queryFn: fetchIngestionHistory,
+  });
+  const del = useMutation({
+    mutationFn: deleteInsightsDocument,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ingestionHistory"] });
+      qc.invalidateQueries({ queryKey: ["insightsDocs"] });
+      toast({ title: "Removed from history" });
+    },
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
+  });
+  return (
+    <HistoryPane
+      title="Ingestion History"
+      description="Previously processed documents"
+      items={items}
+      loading={isLoading}
+      emptyHint="No completed ingestions yet."
+      onDelete={(it) => del.mutate(it.id)}
+    />
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Tab 2: Master Report
 // ─────────────────────────────────────────────────────────────────────────────
