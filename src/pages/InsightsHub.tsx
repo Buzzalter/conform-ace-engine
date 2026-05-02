@@ -412,7 +412,55 @@ function ReportTab() {
           </div>
         </div>
       )}
+
+      <ReportHistoryPane
+        onLoad={(r, bank) => {
+          setReport(r);
+          if (bank) setSelectedBank(bank);
+        }}
+      />
     </div>
+  );
+}
+
+function ReportHistoryPane({
+  onLoad,
+}: { onLoad: (report: MasterReport, bank?: string) => void }) {
+  const qc = useQueryClient();
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["reportHistory"],
+    queryFn: fetchReportHistory,
+  });
+  const del = useMutation({
+    mutationFn: deleteReportHistory,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["reportHistory"] });
+      toast({ title: "Report removed from history" });
+    },
+    onError: () => toast({ title: "Delete failed", variant: "destructive" }),
+  });
+  const handleView = async (item: HistoryItem) => {
+    try {
+      const r = await fetchReportFromHistory(item.id);
+      onLoad(r, item.bank_name);
+      toast({ title: "Loaded historical report" });
+    } catch {
+      toast({ title: "Failed to load report", variant: "destructive" });
+    }
+  };
+  return (
+    <HistoryPane
+      title="Report History"
+      description="Previously generated Master Reports"
+      items={items}
+      loading={isLoading}
+      emptyHint="No reports generated yet."
+      showView
+      showDownload
+      onView={handleView}
+      onDownload={(it) => downloadReportFromHistory(it.id)}
+      onDelete={(it) => del.mutate(it.id)}
+    />
   );
 }
 
