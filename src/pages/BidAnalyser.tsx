@@ -75,6 +75,7 @@ import {
   type BidDocument,
   type EvaluationResult,
   type DraftEvaluation,
+  downloadRFQRubricPDF,
 } from "@/lib/api";
 
 export default function BidAnalyser() {
