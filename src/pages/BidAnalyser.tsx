@@ -1099,6 +1099,17 @@ export default function BidAnalyser() {
         </TabsContent>
       </Tabs>
 
+      {/* ── Draft Feedback Chat ── */}
+      {redTeamEvaluation && redTeamBidId && redTeamRFQId && (
+        <BidDraftChatSheet
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          rfqId={redTeamRFQId}
+          bidId={redTeamBidId}
+          evaluation={redTeamEvaluation}
+        />
+      )}
+
       {/* ── RFQ Understanding Dialog ── */}
       <Dialog open={!!viewRFQ} onOpenChange={(o) => !o && setViewRFQ(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
