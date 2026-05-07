@@ -294,7 +294,6 @@ export interface DraftEvaluation {
   compliance_score_out_of_10: number;
   competitiveness_score_out_of_10: number;
   ai_authenticity_warning: string;
-  missing_appendices: string[];
   pricing_feedback: string;
   technical_vulnerabilities: TechnicalVulnerability[];
   strategic_edge: StrategicEdgeItem[];
