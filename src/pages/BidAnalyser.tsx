@@ -788,7 +788,10 @@ export default function BidAnalyser() {
                                       size="sm"
                                       variant="destructive"
                                       className="gap-1.5"
-                                      onClick={() => draftEvalMutation.mutate(bid.id)}
+                                      onClick={() => {
+                                        setRedTeamBidId(bid.id);
+                                        draftEvalMutation.mutate(bid.id);
+                                      }}
                                       disabled={draftEvalMutation.isPending}
                                     >
                                       {draftEvalMutation.isPending ? (
