@@ -920,18 +920,19 @@ export default function BidAnalyser() {
                 </Card>
               )}
 
-              {/* Critical Gaps */}
-              {redTeamEvaluation.missing_requirements && redTeamEvaluation.missing_requirements.length > 0 && (
+              {/* Missing Appendices */}
+              {redTeamEvaluation.missing_appendices && redTeamEvaluation.missing_appendices.length > 0 && (
                 <Card className="border-destructive/40 bg-destructive/5">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm uppercase tracking-wider text-destructive flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      Critical Gaps — Missing Requirements
+                      <FileText className="h-4 w-4" />
+                      Missing Appendices
                     </CardTitle>
+                    <CardDescription>Required attachments not detected in your draft.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-2.5">
-                      {redTeamEvaluation.missing_requirements.map((m, i) => (
+                    <ul className="space-y-2">
+                      {redTeamEvaluation.missing_appendices.map((m, i) => (
                         <li key={i} className="text-sm text-foreground flex items-start gap-2.5 leading-relaxed">
                           <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
                           <span>{m}</span>
@@ -942,51 +943,134 @@ export default function BidAnalyser() {
                 </Card>
               )}
 
-              {/* Technical Vulnerabilities */}
-              {redTeamEvaluation.technical_flaws && redTeamEvaluation.technical_flaws.length > 0 && (
+              {/* Technical Vulnerabilities — Cards with citations */}
+              {redTeamEvaluation.technical_vulnerabilities && redTeamEvaluation.technical_vulnerabilities.length > 0 && (
                 <Card className="border-warning/40 bg-warning/5">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm uppercase tracking-wider text-foreground flex items-center gap-2">
                       <XCircle className="h-4 w-4 text-destructive" />
                       Technical Vulnerabilities
                     </CardTitle>
+                    <CardDescription>Each gap is grounded in citations from the RFQ and your bid.</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2.5">
-                      {redTeamEvaluation.technical_flaws.map((t, i) => (
-                        <li key={i} className="text-sm text-foreground flex items-start gap-2.5 leading-relaxed">
-                          <XCircle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
-                          <span>{t}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <CardContent className="space-y-4">
+                    {redTeamEvaluation.technical_vulnerabilities.map((v, i) => (
+                      <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive font-semibold text-xs">
+                            {i + 1}
+                          </div>
+                          <p className="text-sm text-foreground leading-relaxed flex-1">
+                            {v.vulnerability}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 pl-10">
+                          <HoverCard openDelay={100}>
+                            <HoverCardTrigger asChild>
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-primary/40 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary hover:bg-primary/20 transition-colors"
+                              >
+                                <Quote className="h-3 w-3" />
+                                RFQ Citation
+                              </button>
+                            </HoverCardTrigger>
+                            <HoverCardContent side="top" className="w-96">
+                              <p className="text-[11px] font-semibold uppercase tracking-wider text-primary mb-1.5">RFQ — Source Quote</p>
+                              <blockquote className="border-l-2 border-primary/40 pl-3 text-xs italic text-foreground leading-relaxed">
+                                {v.rfq_citation?.quote || "—"}
+                              </blockquote>
+                              {v.rfq_citation?.context && (
+                                <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                                  <span className="font-semibold">Context:</span> {v.rfq_citation.context}
+                                </p>
+                              )}
+                            </HoverCardContent>
+                          </HoverCard>
+
+                          <HoverCard openDelay={100}>
+                            <HoverCardTrigger asChild>
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 px-2.5 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/20 transition-colors"
+                              >
+                                <Quote className="h-3 w-3" />
+                                Bid Citation
+                              </button>
+                            </HoverCardTrigger>
+                            <HoverCardContent side="top" className="w-96">
+                              <p className="text-[11px] font-semibold uppercase tracking-wider text-destructive mb-1.5">Your Bid — Source Quote</p>
+                              <blockquote className="border-l-2 border-destructive/40 pl-3 text-xs italic text-foreground leading-relaxed">
+                                {v.bid_citation?.quote || "—"}
+                              </blockquote>
+                              {v.bid_citation?.context && (
+                                <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed">
+                                  <span className="font-semibold">Context:</span> {v.bid_citation.context}
+                                </p>
+                              )}
+                            </HoverCardContent>
+                          </HoverCard>
+                        </div>
+
+                        {v.actionable_nudge && (
+                          <div className="ml-10 rounded-md border border-success/30 bg-success/10 px-3 py-2.5 flex items-start gap-2.5">
+                            <Lightbulb className="h-4 w-4 mt-0.5 shrink-0 text-success" />
+                            <div className="space-y-0.5 min-w-0">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-success">
+                                Actionable Nudge
+                              </p>
+                              <p className="text-xs text-foreground leading-relaxed">
+                                {v.actionable_nudge}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </CardContent>
                 </Card>
               )}
 
               {/* Strategic Edge */}
-              {redTeamEvaluation.creative_suggestions && redTeamEvaluation.creative_suggestions.length > 0 && (
+              {redTeamEvaluation.strategic_edge && redTeamEvaluation.strategic_edge.length > 0 && (
                 <Card className="border-success/40 bg-success/5">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm uppercase tracking-wider text-success flex items-center gap-2">
                       <Lightbulb className="h-4 w-4" />
-                      Strategic Edge — Creative Suggestions
+                      Strategic Edge
                     </CardTitle>
+                    <CardDescription>Creative angles validated by the AI Judge.</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2.5">
-                      {redTeamEvaluation.creative_suggestions.map((s, i) => (
-                        <li key={i} className="text-sm text-foreground flex items-start gap-2.5 leading-relaxed">
-                          <Lightbulb className="h-4 w-4 mt-0.5 shrink-0 text-success" />
-                          <span>{s}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <CardContent className="space-y-3">
+                    {redTeamEvaluation.strategic_edge.map((s, i) => (
+                      <div key={i} className="rounded-lg border border-border bg-card p-4 space-y-2.5">
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-success" />
+                            {s.theme}
+                          </p>
+                          {s.feasibility_check && (
+                            <Badge variant="outline" className="border-success/50 text-success gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              AI Verified
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-foreground/90 leading-relaxed">
+                          {s.description}
+                        </p>
+                        {s.feasibility_check && (
+                          <blockquote className="border-l-2 border-success/40 pl-3 py-1 text-xs italic text-muted-foreground leading-relaxed">
+                            <span className="font-semibold not-italic text-success">Feasibility Check: </span>
+                            {s.feasibility_check}
+                          </blockquote>
+                        )}
+                      </div>
+                    ))}
                   </CardContent>
                 </Card>
               )}
-
-              {/* Commercial Assessment */}
               {redTeamEvaluation.pricing_feedback && (
                 <Card className="border-l-4 border-l-success">
                   <CardHeader className="pb-2">
