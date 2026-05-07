@@ -931,28 +931,6 @@ export default function BidAnalyser() {
                 </Card>
               )}
 
-              {/* Missing Appendices */}
-              {redTeamEvaluation.missing_appendices && redTeamEvaluation.missing_appendices.length > 0 && (
-                <Card className="border-destructive/40 bg-destructive/5">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm uppercase tracking-wider text-destructive flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      Missing Appendices
-                    </CardTitle>
-                    <CardDescription>Required attachments not detected in your draft.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {redTeamEvaluation.missing_appendices.map((m, i) => (
-                        <li key={i} className="text-sm text-foreground flex items-start gap-2.5 leading-relaxed">
-                          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-destructive" />
-                          <span>{m}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              )}
 
               {/* Technical Vulnerabilities — Cards with citations */}
               {redTeamEvaluation.technical_vulnerabilities && redTeamEvaluation.technical_vulnerabilities.length > 0 && (
