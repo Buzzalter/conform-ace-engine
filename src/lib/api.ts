@@ -271,20 +271,52 @@ export async function runEvaluation(rfqId: string): Promise<{ status: string; ev
   return res.json();
 }
 
+export interface DraftCitation {
+  quote: string;
+  context: string;
+}
+
+export interface TechnicalVulnerability {
+  vulnerability: string;
+  rfq_citation: DraftCitation;
+  bid_citation: DraftCitation;
+  actionable_nudge: string;
+}
+
+export interface StrategicEdgeItem {
+  theme: string;
+  description: string;
+  feasibility_check: string;
+}
+
 export interface DraftEvaluation {
-  compliance_score_out_of_10?: number;
-  competitiveness_score_out_of_10?: number;
-  executive_summary?: string;
-  missing_requirements?: string[];
-  technical_flaws?: string[];
-  creative_suggestions?: string[];
-  pricing_feedback?: string;
-  ai_authenticity_warning?: string;
+  executive_summary: string;
+  compliance_score_out_of_10: number;
+  competitiveness_score_out_of_10: number;
+  ai_authenticity_warning: string;
+  missing_appendices: string[];
+  pricing_feedback: string;
+  technical_vulnerabilities: TechnicalVulnerability[];
+  strategic_edge: StrategicEdgeItem[];
   [k: string]: unknown;
 }
 
 export async function runDraftEvaluation(rfqId: string, bidId: string): Promise<{ status: string; evaluation: DraftEvaluation }> {
   const res = await fetch(`${BASE}/api/bid/rfq/${rfqId}/bids/${bidId}/draft-evaluate`, { method: "POST" });
   if (!res.ok) throw new Error("Failed to run draft evaluation");
+  return res.json();
+}
+
+export async function bidDraftChat(
+  rfqId: string,
+  bidId: string,
+  payload: { query: string; history: { role: string; content: string }[]; evaluation_context: unknown },
+): Promise<{ response: string }> {
+  const res = await fetch(`${BASE}/api/bid/rfq/${rfqId}/bids/${bidId}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to get chat response");
   return res.json();
 }
