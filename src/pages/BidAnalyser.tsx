@@ -49,6 +49,7 @@ import {
   Bot,
   UserCheck,
   Quote,
+  FileDown,
 } from "lucide-react";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { BidDraftChatSheet } from "@/components/BidDraftChatSheet";
