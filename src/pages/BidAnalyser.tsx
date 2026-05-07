@@ -48,7 +48,10 @@ import {
   Skull,
   Bot,
   UserCheck,
+  Quote,
 } from "lucide-react";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
+import { BidDraftChatSheet } from "@/components/BidDraftChatSheet";
 import {
   Accordion,
   AccordionContent,
