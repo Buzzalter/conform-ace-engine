@@ -1117,13 +1117,28 @@ export default function BidAnalyser() {
       <Dialog open={!!viewRFQ} onOpenChange={(o) => !o && setViewRFQ(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-primary" />
-              AI Understanding — {viewRFQ?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Extracted rubric the AI will use to evaluate vendor bids.
-            </DialogDescription>
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <DialogTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5 text-primary shrink-0" />
+                  <span className="truncate">AI Understanding — {viewRFQ?.name}</span>
+                </DialogTitle>
+                <DialogDescription>
+                  Extracted rubric the AI will use to evaluate vendor bids.
+                </DialogDescription>
+              </div>
+              {viewRFQ && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => downloadRFQRubricPDF(viewRFQ.id)}
+                  className="shrink-0 mr-6"
+                >
+                  <FileDown className="h-4 w-4 mr-1.5" />
+                  Download PDF
+                </Button>
+              )}
+            </div>
           </DialogHeader>
           {viewRFQ?.understanding ? (
             <div className="space-y-4 mt-2">
