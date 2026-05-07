@@ -320,3 +320,7 @@ export async function bidDraftChat(
   if (!res.ok) throw new Error("Failed to get chat response");
   return res.json();
 }
+
+export function downloadRFQRubricPDF(rfqId: string) {
+  window.open(`${BASE}/api/bid/rfq/${encodeURIComponent(rfqId)}/rubric/pdf`, "_blank");
+}
