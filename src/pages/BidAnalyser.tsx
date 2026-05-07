@@ -819,10 +819,17 @@ export default function BidAnalyser() {
           {/* ── Red-Team Results ── */}
           {redTeamEvaluation && (
             <section className="space-y-4">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
                 <Button variant="outline" onClick={handleClearRedTeam} className="gap-2">
                   <RotateCcw className="h-4 w-4" />
                   Clear &amp; Start Over
+                </Button>
+                <Button
+                  onClick={() => setChatOpen(true)}
+                  className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Discuss Feedback with AI
                 </Button>
               </div>
 
