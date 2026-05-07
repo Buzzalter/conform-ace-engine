@@ -59,6 +59,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import { FileDropzone } from "@/components/FileDropzone";
 import {
   uploadRFQ,
@@ -1130,11 +1131,79 @@ export default function BidAnalyser() {
                     {key.replace(/_/g, " ")}
                   </p>
                   {Array.isArray(value) ? (
-                    <ul className="text-sm text-foreground space-y-1 pl-4 list-disc">
-                      {value.map((v, i) => (
-                        <li key={i}>{String(v)}</li>
-                      ))}
-                    </ul>
+                    <div className="space-y-2">
+                      {value.map((v, i) => {
+                        const isObj = v && typeof v === "object";
+                        const item = (isObj ? v : {}) as Record<string, any>;
+                        const description = isObj
+                          ? item.requirement ?? item.description ?? item.text ?? item.name ?? null
+                          : String(v);
+                        const importance: string | null = isObj ? item.importance ?? null : null;
+                        const context: string | null = isObj ? item.context ?? item.details ?? null : null;
+                        const extras = isObj
+                          ? Object.entries(item).filter(
+                              ([k]) =>
+                                ![
+                                  "requirement",
+                                  "description",
+                                  "text",
+                                  "name",
+                                  "importance",
+                                  "context",
+                                  "details",
+                                ].includes(k),
+                            )
+                          : [];
+
+                        const importanceClasses =
+                          importance === "High"
+                            ? "bg-red-500/10 text-red-600 border-red-500/30 dark:text-red-400"
+                            : importance === "Medium"
+                              ? "bg-amber-500/10 text-amber-600 border-amber-500/30 dark:text-amber-400"
+                              : importance === "Low"
+                                ? "bg-slate-500/10 text-slate-600 border-slate-500/30 dark:text-slate-400"
+                                : "bg-muted text-muted-foreground border-border";
+
+                        return (
+                          <div
+                            key={i}
+                            className="rounded-lg border border-border bg-muted/30 p-3 space-y-1.5"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <p className="text-sm text-foreground leading-relaxed flex-1">
+                                {description ?? JSON.stringify(item)}
+                              </p>
+                              {importance && (
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "shrink-0 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+                                    importanceClasses,
+                                  )}
+                                >
+                                  {importance}
+                                </Badge>
+                              )}
+                            </div>
+                            {context && (
+                              <p className="text-xs italic text-muted-foreground leading-relaxed">
+                                {context}
+                              </p>
+                            )}
+                            {extras.length > 0 && (
+                              <div className="text-xs text-muted-foreground space-y-0.5">
+                                {extras.map(([k, val]) => (
+                                  <div key={k}>
+                                    <span className="font-medium">{k.replace(/_/g, " ")}:</span>{" "}
+                                    {typeof val === "object" ? JSON.stringify(val) : String(val)}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   ) : (
                     <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
                       {typeof value === "object"
